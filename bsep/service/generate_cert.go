@@ -9,7 +9,6 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"crypto/x509/pkix"
-	"encoding/gob"
 	"encoding/pem"
 	"fmt"
 	"github.com/labstack/echo/v4"
@@ -58,6 +57,7 @@ func (cs *CertificateService) CreateCertificate(request *dto.CertificateRequest)
 			Locality:      []string{request.Locality},
 			SerialNumber:  request.SerialNumber,
 			Province:      []string{request.Province},
+			CommonName:    request.CommonName,
 		},
 		EmailAddresses: []string{request.EmailAddress},
 		NotBefore:      startDate,
@@ -84,7 +84,7 @@ func (cs *CertificateService) CreateCertificate(request *dto.CertificateRequest)
 			parent = rootCert
 		}
 	}
-	
+
 	// generate private key
 	privatekey, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
@@ -128,37 +128,42 @@ func (cs *CertificateService) CreateCertificate(request *dto.CertificateRequest)
 	defer zeroing(password)
 	err = writeKeyStore(keyStore, "keystore.jks", password)
 	if err != nil {
+		log.Println(err.Error())
 		return err
 	}
 
 	// save private key
+	directoryFileString := fmt.Sprintf("keys/%s-%s", request.SerialNumber, request.CommonName)
+	err = os.Mkdir(directoryFileString, 0777)
 	pkey := x509.MarshalPKCS1PrivateKey(privatekey)
 	pubkey, _ := x509.MarshalPKIXPublicKey(publickey)
-	ioutil.WriteFile("keys/private.key", pkey, 0777)
-	fmt.Println("private key saved to keys/private.key")
+	privateKeyFile := fmt.Sprintf("%s/%s.key", directoryFileString, request.SerialNumber)
+	ioutil.WriteFile(privateKeyFile, pkey, 0777)
+	fmt.Println("private key saved to ", privateKeyFile)
 
 	// save public key
-
-	ioutil.WriteFile("keys/public.key", pubkey, 0777)
-	fmt.Println("public key saved to keys/public.key")
+	pubKeyFile := fmt.Sprintf("%s/public%s.key", directoryFileString, request.SerialNumber)
+	ioutil.WriteFile(pubKeyFile, pubkey, 0777)
+	fmt.Println("public key saved to ", pubKeyFile)
 
 	// save cert
-	ioutil.WriteFile("keys/cert.pem", cert, 0777)
-	fmt.Println("certificate saved to cert.pem")
+	fileString := fmt.Sprintf("%s/cert%s.pem", directoryFileString, request.SerialNumber)
+	ioutil.WriteFile(fileString, cert, 0777)
+	fmt.Println("certificate saved to ", fileString)
 
 	// these are the files save with encoding/gob style
-	privkeyfile, _ := os.Create("keys/privategob.key")
-	privkeyencoder := gob.NewEncoder(privkeyfile)
-	privkeyencoder.Encode(privatekey)
-	privkeyfile.Close()
+	//privkeyfile, _ := os.Create("keys/privategob.key")
+	//privkeyencoder := gob.NewEncoder(privkeyfile)
+	//privkeyencoder.Encode(privatekey)
+	//privkeyfile.Close()
 
-	pubkeyfile, _ := os.Create("keys/publickgob.key")
-	pubkeyencoder := gob.NewEncoder(pubkeyfile)
-	pubkeyencoder.Encode(publickey)
-	pubkeyfile.Close()
+	//pubkeyfile, _ := os.Create("keys/publickgob.key")
+	//pubkeyencoder := gob.NewEncoder(pubkeyfile)
+	//pubkeyencoder.Encode(publickey)
+	//pubkeyfile.Close()
 
 	// this will create plain text PEM file.
-	filestring := fmt.Sprintf("keys/certpem%s.pem", request.SerialNumber)
+	filestring := fmt.Sprintf("%s/certpem%s.pem", directoryFileString, request.SerialNumber)
 	pemfile, _ := os.Create(filestring)
 	var pemkey = &pem.Block{
 		Type:  "RSA PRIVATE KEY",
@@ -263,7 +268,6 @@ func (cs *CertificateService) RevokeCertificate(s string) error {
 			}
 		}
 	}
-
 
 	//convert big.Int to int , fastest way to convert to string, and then to int
 	//save all revoked certificates in database

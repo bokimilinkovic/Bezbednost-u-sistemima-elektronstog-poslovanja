@@ -12,5 +12,6 @@ type CertificateRequest struct {
 	StartsAt             string `json:"startsat"`
 	EndsAt               string `json:"endsat"`
 	CertificateAuthority string `json:"certificateauthority"`
+	CommonName 			 string `json:"commonName"`
 	Issuer               string `json:"issuer"`
 }

@@ -3,6 +3,7 @@ package dto
 type CertificateResponse struct {
 	Country      string
 	Organization string
+	CommonName   string
 	Address      string
 	Province     string
 	Email        string

@@ -101,7 +101,9 @@ func (ch *CertificateHandler) Download(c echo.Context) error {
 		return errors.New("Get 'file' not specified in url.")
 	}
 	fmt.Println("Client requests: " + Filename)
-	Openfile, err := os.Open(fmt.Sprintf("keys/certpem%s.pem", Filename))
+	serialNumber := strings.Split(Filename, "-")[0]
+	fmt.Println("Serial Number : ", serialNumber)
+	Openfile, err := os.Open(fmt.Sprintf("keys/%s/certpem%s.pem", Filename, serialNumber))
 	defer Openfile.Close() //Close after function return
 	if err != nil {
 		return err
@@ -131,11 +133,12 @@ func (ch *CertificateHandler) Download(c echo.Context) error {
 }
 
 func toCertificateResponse(c *x509.Certificate, revoked bool) dto.CertificateResponse {
-	issuer := fmt.Sprintf("%s:%s:%s:%s",c.Issuer.Country[0],c.Issuer.Organization[0],c.Issuer.StreetAddress[0],c.Issuer.Province[0])
+	issuer := fmt.Sprintf("%s:%s:%s:%s", c.Issuer.Country[0], c.Issuer.Organization[0], c.Issuer.StreetAddress[0], c.Issuer.Province[0])
 	fmt.Println(issuer)
 	return dto.CertificateResponse{
 		Country:      c.Subject.Country[0],
 		Organization: c.Subject.Organization[0],
+		CommonName:   c.Subject.CommonName,
 		Address:      c.Subject.StreetAddress[0],
 		Province:     c.Subject.Province[0],
 		Email:        c.EmailAddresses[0],

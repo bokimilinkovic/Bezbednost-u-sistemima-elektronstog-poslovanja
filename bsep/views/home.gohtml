@@ -20,9 +20,9 @@
             <th scope="col">Serial Number</th>
             <th scope="col">Country</th>
             <th scope="col">Organization</th>
+            <th scope="col">Domain</th>
             <th scope="col">Address</th>
             <th scope="col">Email</th>
-            <th scope="col">Postal Code</th>
             <th scope="col">Issuer</th>
         </tr>
         </thead>
@@ -32,9 +32,9 @@
                 <th scope="row">{{$element.SerialNumber}}</th>
                 <td>{{$element.Country}}</td>
                 <td>{{$element.Organization}}</td>
+                <td>{{$element.CommonName}}</td>
                 <td>{{$element.Address}}</td>
                 <td>{{$element.Email}}</td>
-                <td>{{$element.PostalCode}}</td>
                 <td>{{$element.Issuer}}</td>
                 <td>
                     {{if $element.Revoked}}
@@ -46,7 +46,7 @@
                     {{end}}
                 </td>
                 <td>
-                    <form action="/download/{{.SerialNumber}}" method="post" class="form-horizontal">
+                    <form action="/download/{{.SerialNumber}}-{{.CommonName}}" method="post" class="form-horizontal">
                         <button type="submit" class="btn btn-primary">Download</button>
                     </form>
                 </td>
