@@ -221,7 +221,7 @@ func (cs *CertificateService) FindCertificatBySerialNumber(number int) *x509.Cer
 
 //Read all certificates, but return only those who are allowed to be CA and not expired yet
 //TODO: also make sure to return only those who are not yet revoked
-func (cs *CertificateService) ValidToBeCA() []*x509.Certificate {
+func (cs *CertificateService) ValidToCA() []*x509.Certificate {
 	certifications, err := cs.ReadKeyStoreAllInfo()
 	toReturn := []*x509.Certificate{}
 	if err != nil {
@@ -233,6 +233,16 @@ func (cs *CertificateService) ValidToBeCA() []*x509.Certificate {
 		}
 	}
 	return toReturn
+}
+//This method checks if certificat is Valid:
+// 1. Not expired
+// 2. Not revoked yet
+func(cs *CertificateService) ValidCertificate(cert *x509.Certificate)bool{
+	isValid := false
+	if time.Now().Before(cert.NotAfter) && !cs.IsRevoked(cert) {
+		isValid = true
+	}
+	return isValid
 }
 
 //Here we need to revoke certificates, but first need to have this on mind:
@@ -263,7 +273,7 @@ func (cs *CertificateService) RevokeCertificate(s string) error {
 	}
 	for i := position + 1; i < len(allCertificats); i++ {
 		for _, cc := range toBeRevoked {
-			if allCertificats[i].Issuer.SerialNumber == cc.SerialNumber.String() {
+			if allCertificats[i].Issuer.SerialNumber == cc.SerialNumber.String() && cs.ValidCertificate(allCertificats[i]){ //if its not expired, and not revoked
 				toBeRevoked = append(toBeRevoked, allCertificats[i])
 			}
 		}

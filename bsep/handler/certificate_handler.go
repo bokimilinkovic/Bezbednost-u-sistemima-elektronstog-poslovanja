@@ -28,7 +28,7 @@ const uploadPath = "./keys"
 
 func (ch *CertificateHandler) CreateNew(c echo.Context) error {
 	data := []string{}
-	certs := ch.certificateService.ValidToBeCA()
+	certs := ch.certificateService.ValidToCA()
 	for _, c := range certs {
 		majorInfo := fmt.Sprintf("%s, %s, %s, %s, %s, %s, %s", c.Subject.Organization[0], c.Subject.StreetAddress[0], c.Subject.Locality[0], c.Subject.Province[0], c.Subject.Country[0], c.Subject.SerialNumber, c.Subject.PostalCode[0])
 		fmt.Sprintf("%s", c.Subject)
@@ -66,7 +66,8 @@ func (ch *CertificateHandler) Home(c echo.Context) error {
 	responses := []dto.CertificateResponse{}
 	for _, c := range certificates {
 		revoked := ch.certificateService.IsRevoked(c)
-		responses = append(responses, toCertificateResponse(c, revoked))
+		valid := ch.certificateService.ValidCertificate(c)
+		responses = append(responses, toCertificateResponse(c, revoked, valid))
 	}
 
 	return tpl.Execute(c.Response().Writer, responses)
@@ -132,19 +133,19 @@ func (ch *CertificateHandler) Download(c echo.Context) error {
 	return nil
 }
 
-func toCertificateResponse(c *x509.Certificate, revoked bool) dto.CertificateResponse {
-	issuer := fmt.Sprintf("%s:%s:%s:%s", c.Issuer.Country[0], c.Issuer.Organization[0], c.Issuer.StreetAddress[0], c.Issuer.Province[0])
-	fmt.Println(issuer)
+func toCertificateResponse(c *x509.Certificate, revoked, valid bool) dto.CertificateResponse {
+	issuer := fmt.Sprintf("%s:%s", c.Issuer.Country[0], c.Issuer.Organization[0])
+	validFromTo := fmt.Sprintf("%s - %s",c.NotBefore.Format("2006-01-02"), c.NotAfter.Format("2006-01-02"))
 	return dto.CertificateResponse{
 		Country:      c.Subject.Country[0],
 		Organization: c.Subject.Organization[0],
 		CommonName:   c.Subject.CommonName,
 		Address:      c.Subject.StreetAddress[0],
-		Province:     c.Subject.Province[0],
 		Email:        c.EmailAddresses[0],
 		SerialNumber: c.SerialNumber.String(),
-		PostalCode:   c.Subject.PostalCode[0],
 		Issuer:       issuer,
 		Revoked:      revoked,
+		Valid:		  valid,
+		ValidFromTo:  validFromTo,
 	}
 }
