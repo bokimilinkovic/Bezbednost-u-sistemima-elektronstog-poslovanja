@@ -24,6 +24,7 @@
             <th scope="col">Address</th>
             <th scope="col">Email</th>
             <th scope="col">Issuer</th>
+            <th scope="col">Valid From-To</th>
         </tr>
         </thead>
         <tbody>
@@ -36,19 +37,28 @@
                 <td>{{$element.Address}}</td>
                 <td>{{$element.Email}}</td>
                 <td>{{$element.Issuer}}</td>
+                <td>{{$element.ValidFromTo}}</td>
                 <td>
                     {{if $element.Revoked}}
                         <label>Already revoked</label>
                     {{else}}
-                        <form action="/revoke/{{.SerialNumber}}" method="POST" class="form-horizontal">
-                            <button type="submit" class="btn btn-warning">Revoke</button>
-                        </form>
+                        {{if $element.Valid}}
+                            <form action="/revoke/{{.SerialNumber}}" method="POST" class="form-horizontal">
+                                <button type="submit" class="btn btn-warning">Revoke</button>
+                            </form>
+                         {{else}}
+                            <label>Not Valid</label>
+                         {{end}}
                     {{end}}
                 </td>
                 <td>
-                    <form action="/download/{{.SerialNumber}}-{{.CommonName}}" method="post" class="form-horizontal">
-                        <button type="submit" class="btn btn-primary">Download</button>
-                    </form>
+                    {{if and $element.Valid (not $element.Revoked)}}
+                        <form action="/download/{{.SerialNumber}}-{{.CommonName}}" method="post" class="form-horizontal">
+                            <button type="submit" class="btn btn-primary">Download</button>
+                        </form>
+                    {{else}}
+                        <label>Unable to download</label>
+                    {{end}}
                 </td>
             </tr>
         {{end}}

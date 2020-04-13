@@ -9,6 +9,8 @@ type CertificateResponse struct {
 	Email        string
 	SerialNumber string
 	PostalCode   string
-	Issuer 		 string
+	Issuer       string
 	Revoked      bool
+	Valid        bool
+	ValidFromTo  string
 }
