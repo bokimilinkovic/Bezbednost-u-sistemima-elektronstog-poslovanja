@@ -1,17 +1,5 @@
-<head>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
-
-    <!-- jQuery library -->
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
-
-    <!-- Latest compiled JavaScript -->
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
-</head>
 <body>
-    <nav class="navbar navbar-dark bg-dark">
-        <a class="navbar-brand" href="/createnew">Create New</a>
-        <a class="navbar-brand" href="/home">Visit All</a>
-    </nav>
+    {{template "navbar"}}
     <br>
     <br>
     <h2>Create new certificate</h2>
@@ -69,6 +57,16 @@
                         Certificate authority
                     </label>
                 </div>
+                </div>
+                <div form-group col-md-4>
+                        <input  name="eku" type="radio" id="server" value="server auth">
+                        <label class="form-check-label" for="server">
+                            Server Auth
+                        </label>
+                        <input  name="eku" type="radio" id="client" value="client auth">
+                        <label class="form-check-label" for="client">
+                            Client Auth
+                        </label>
                 </div>
                 <h3>Choose issuer</h3>
                 <div class="form-group col-md-4">

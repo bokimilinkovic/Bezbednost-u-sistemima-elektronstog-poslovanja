@@ -17,10 +17,11 @@ import (
 
 type CertificateHandler struct {
 	certificateService *service.CertificateService
+	tpl *template.Template
 }
 
-func NewCertificateHandler(cs *service.CertificateService) *CertificateHandler {
-	return &CertificateHandler{certificateService: cs}
+func NewCertificateHandler(cs *service.CertificateService, tpl *template.Template) *CertificateHandler {
+	return &CertificateHandler{certificateService: cs, tpl:tpl}
 }
 
 const maxUploadSize = 2 * 1024 * 1024 // 2 mb
@@ -31,12 +32,11 @@ func (ch *CertificateHandler) CreateNew(c echo.Context) error {
 	certs := ch.certificateService.ValidToCA()
 	for _, c := range certs {
 		majorInfo := fmt.Sprintf("%s, %s, %s, %s, %s, %s, %s", c.Subject.Organization[0], c.Subject.StreetAddress[0], c.Subject.Locality[0], c.Subject.Province[0], c.Subject.Country[0], c.Subject.SerialNumber, c.Subject.PostalCode[0])
-		fmt.Sprintf("%s", c.Subject)
+		fmt.Println(majorInfo)
 		data = append(data, majorInfo)
 	}
-	tpl := template.Must(template.ParseFiles("views/create.gohtml"))
 
-	return tpl.Execute(c.Response().Writer, data)
+	return ch.tpl.ExecuteTemplate(c.Response().Writer,"create.gohtml",data)
 }
 
 func (ch *CertificateHandler) Create(c echo.Context) error {
@@ -55,13 +55,12 @@ func (ch *CertificateHandler) Create(c echo.Context) error {
 }
 
 func (ch *CertificateHandler) Home(c echo.Context) error {
-	tpl := template.Must(template.ParseFiles("views/home.gohtml"))
 	certificates, err := ch.certificateService.ReadKeyStoreAllInfo()
 	if err != nil {
 		return err
 	}
 	if len(certificates) == 0 {
-		return tpl.Execute(c.Response().Writer, []dto.CertificateResponse{})
+		return ch.tpl.ExecuteTemplate(c.Response().Writer,"home.gohtml", []dto.CertificateResponse{})
 	}
 	responses := []dto.CertificateResponse{}
 	for _, c := range certificates {
@@ -70,7 +69,7 @@ func (ch *CertificateHandler) Home(c echo.Context) error {
 		responses = append(responses, toCertificateResponse(c, revoked, valid))
 	}
 
-	return tpl.Execute(c.Response().Writer, responses)
+	return ch.tpl.ExecuteTemplate(c.Response().Writer,"home.gohtml",responses)
 }
 
 func (ch *CertificateHandler) ReadAllInfo(c echo.Context) error {
@@ -80,6 +79,26 @@ func (ch *CertificateHandler) ReadAllInfo(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, certs)
+}
+
+func (ch *CertificateHandler) Check(c echo.Context) error {
+	//I need to splitr url path : /revoke/2313
+	parts := strings.Split(c.Request().URL.Path, "/")
+	serialNumber := parts[2]
+	num, err := strconv.Atoi(serialNumber)
+	if err != nil {
+		panic(err)
+	}
+	cert := ch.certificateService.FindCertificatBySerialNumber(num)
+	if cert == nil{
+		return c.HTML(http.StatusNotFound,`<body>Certificate with that serial number is not found</body>`)
+	}
+	isRevoked := ch.certificateService.IsRevoked(cert)
+	if isRevoked{
+		return c.HTML(http.StatusOK,`<body>Certificate with that serial number already revoked</body>`)
+	}
+
+	return c.HTML(http.StatusOK, `<body><h4>Certificate: ` + cert.Subject.Organization[0] + `</h4> is not revoked..</body>`)
 }
 
 func (ch *CertificateHandler) Revoke(c echo.Context) error {
