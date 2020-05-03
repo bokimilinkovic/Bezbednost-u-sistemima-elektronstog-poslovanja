@@ -13,4 +13,5 @@ type CertificateResponse struct {
 	Revoked      bool
 	Valid        bool
 	ValidFromTo  string
+	Eku          string
 }

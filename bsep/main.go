@@ -8,9 +8,16 @@ import (
 	"github.com/labstack/echo/v4"
 	echomiddleware "github.com/labstack/echo/v4/middleware"
 	"github.com/joho/godotenv"
+	"html/template"
 	"os"
 	"strconv"
 )
+
+var tpl *template.Template
+
+func init(){
+	tpl = template.Must(template.ParseGlob("views/*.gohtml"))
+}
 
 func main() {
 	err := godotenv.Load()
@@ -40,8 +47,8 @@ func main() {
 	}
 
 	certificateService := &service.CertificateService{CertificateDB: store}
-	certificateHandler := handler.NewCertificateHandler(certificateService)
-	loginHandler := handler.NewLoginHandler(certificateService)
+	certificateHandler := handler.NewCertificateHandler(certificateService, tpl)
+	loginHandler := handler.NewLoginHandler(certificateService, tpl)
 	e := echo.New()
 	e.Use(echomiddleware.Logger())
 	fmt.Println("Server started")
@@ -52,6 +59,7 @@ func main() {
 	e.POST("/create", certificateHandler.Create)
 	e.GET("/readAll", certificateHandler.ReadAllInfo)
 	e.GET("/home", certificateHandler.Home)
+	e.GET("/certificate/:number", certificateHandler.Check)
 	e.POST("/revoke/:number", certificateHandler.Revoke)
 	e.POST("/download/:number", certificateHandler.Download)
 	e.Server.Addr = ":8080"

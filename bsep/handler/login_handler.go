@@ -9,15 +9,15 @@ import (
 
 type LoginHandler struct {
 	certificateService *service.CertificateService
+	tpl *template.Template
 }
 
-func NewLoginHandler(cs *service.CertificateService) *LoginHandler {
-	return &LoginHandler{certificateService: cs}
+func NewLoginHandler(cs *service.CertificateService, tpl *template.Template) *LoginHandler {
+	return &LoginHandler{certificateService: cs,tpl: tpl}
 }
 
 func (lg *LoginHandler) Login(c echo.Context) error {
-	tpl := template.Must(template.ParseFiles("views/login.gohtml"))
-	return tpl.Execute(c.Response().Writer, nil)
+	return lg.tpl.ExecuteTemplate(c.Response().Writer,"login.gohtml",nil)
 }
 
 func (lg *LoginHandler) Loging(c echo.Context) error {

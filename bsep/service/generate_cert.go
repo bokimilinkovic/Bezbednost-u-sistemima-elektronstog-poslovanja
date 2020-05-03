@@ -43,6 +43,10 @@ func (cs *CertificateService) CreateCertificate(request *dto.CertificateRequest)
 	if request.CertificateAuthority == "on" {
 		isCA = true
 	}
+	extkeyUsage := x509.ExtKeyUsageClientAuth
+	if request.Eku == "server auth"{
+		extkeyUsage = x509.ExtKeyUsageServerAuth
+	}
 	//create certificate with given request values
 	template := &x509.Certificate{
 		IsCA:                  isCA,
@@ -63,11 +67,10 @@ func (cs *CertificateService) CreateCertificate(request *dto.CertificateRequest)
 		NotBefore:      startDate,
 		NotAfter:       endDate,
 		// see http://golang.org/pkg/crypto/x509/#KeyUsage
-		ExtKeyUsage: []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},
+		ExtKeyUsage: []x509.ExtKeyUsage{extkeyUsage},
 		KeyUsage:    x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
 	}
 	fmt.Println(template)
-
 	var parent = template
 	//Check field issuer from request, if issuer is root-self signed, certificate is self signed
 	// otherwise, get parent certificate by serial number, which must be parsed from request object
@@ -166,7 +169,8 @@ func (cs *CertificateService) CreateCertificate(request *dto.CertificateRequest)
 	filestring := fmt.Sprintf("%s/certpem%s.pem", directoryFileString, request.SerialNumber)
 	pemfile, _ := os.Create(filestring)
 	var pemkey = &pem.Block{
-		Type:  "RSA PRIVATE KEY",
+		//Type:  "RSA PRIVATE KEY",
+		Type:    "CERTIFICATE",
 		Bytes: x509.MarshalPKCS1PrivateKey(privatekey)}
 	pem.Encode(pemfile, pemkey)
 	pemfile.Close()
