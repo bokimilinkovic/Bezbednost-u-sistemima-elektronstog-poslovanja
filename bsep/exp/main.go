@@ -1,0 +1,52 @@
+package main
+
+import (
+	"bsep/model"
+	"bsep/repository"
+	"fmt"
+)
+
+func main(){
+	store, err := connect()
+	if err != nil{
+		panic(err)
+	}
+	defer store.Close()
+	store.DB().DropTableIfExists(&model.Role{}, &model.User{}, &model.Permission{})
+	store.DB().AutoMigrate(&model.User{}, &model.Role{}, &model.Permission{})
+
+	role := &model.Role{Name:"Admin"}
+	permission1 := &model.Permission{Name:"Kupovina"}
+	permission2 := &model.Permission{Name:"Svega"}
+	role.Permissions = append(role.Permissions, permission1,permission2)
+
+	user := model.User{Username:"username",PasswordHash:"wwqeqwe"}
+	user.Roles = append(user.Roles,role)
+	err = store.DB().Save(&user).Error
+	if err != nil{
+		panic(err)
+	}
+
+	role2 := &model.Role{Name:"Kupac"}
+	store.DB().Model(&user).Association("Roles").Append([]*model.Role{role2})
+	user3 := &model.User{}
+	store.DB().Preload("Roles.Permissions").First(&user3)
+	fmt.Println("User: ", user3.Username, " with roles: ", user3.Roles[0].Name, " can do : ", user3.Roles[0].Permissions[0].Name, " ", user3.Roles[0].Permissions[1].Name)
+
+}
+
+func connect()(*repository.CertificateDB,error){
+	config := repository.PostgresConfig{
+		Host:     "localhost",
+		Port:     5432,
+		User:     "bojan",
+		Password: "bojan",
+		Name:     "bsep",
+	}
+
+	store, err := repository.Open(config)
+	if err != nil {
+		return nil,err
+	}
+	return store,nil
+}

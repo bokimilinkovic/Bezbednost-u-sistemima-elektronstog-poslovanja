@@ -2,6 +2,7 @@ package main
 
 import (
 	"bsep/handler"
+	"bsep/middleware"
 	"bsep/repository"
 	"bsep/service"
 	"fmt"
@@ -48,13 +49,21 @@ func main() {
 
 	certificateService := &service.CertificateService{CertificateDB: store}
 	certificateHandler := handler.NewCertificateHandler(certificateService, tpl)
-	loginHandler := handler.NewLoginHandler(certificateService, tpl)
+	loginService := &service.UserService{DB: store}
+	loginHandler := handler.NewLoginHandler(loginService, tpl)
 	e := echo.New()
 	e.Use(echomiddleware.Logger())
 	fmt.Println("Server started")
 
-	e.GET("/login", loginHandler.Login)
-	e.POST("/loging",loginHandler.Loging)
+	userApi := e.Group("/api/user")
+	userApi.GET("/signup", loginHandler.SignUp)
+	userApi.POST("/register", loginHandler.Register)
+	userApi.GET("/login", loginHandler.LoginHtml)
+	userApi.POST("/login", loginHandler.Login)
+
+	userApi.GET("/private", loginHandler.CheckUser ,middleware.IsLoggedIn)
+	//e.GET("/login", loginHandler.Login)
+	//e.POST("/loging",loginHandler.Logging)
 	e.GET("/createnew", certificateHandler.CreateNew)
 	e.POST("/create", certificateHandler.Create)
 	e.GET("/readAll", certificateHandler.ReadAllInfo)
