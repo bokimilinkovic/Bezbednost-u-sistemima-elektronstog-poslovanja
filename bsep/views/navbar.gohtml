@@ -14,10 +14,18 @@
                 <a class="navbar-brand" href="#">BSEP</a>
             </div>
             <ul class="nav navbar-nav">
-                <li class="active"><a href="/createnew">New Certificate</a></li>
+                {{if .}}
+                         {{if .Admin}}
+                            <li class="active"><a href="/createnew">New Certificate</a></li>
+                         {{end}}
+                {{end}}
                 <li><a href="/home">Visit all</a></li>
-                <li><a href="#">Page 2</a></li>
-                <li><a href="#">Page 3</a></li>
+
+                {{if .User}}
+                    <li><a href="/api/user/logout">Logout</a></li>
+                {{else}}
+                    <li><a href="/api/user/login">Login</a></li>
+                {{end}}
             </ul>
         </div>
     </nav>

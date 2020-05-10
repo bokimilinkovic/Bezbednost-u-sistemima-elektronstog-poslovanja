@@ -112,6 +112,16 @@ func(cdb *CertificateDB)FindUser(username string) *model.User{
 	return user
 }
 
+func(cdb *CertificateDB)FindUserByID(id int)(*model.User, error){
+	user := &model.User{}
+	err := cdb.db.Preload("Roles.Permissions").Where("id = ?", id).Find(&user).Error
+	if err != nil {
+		return nil,err
+	}
+
+	return user, nil
+}
+
 func(cdb *CertificateDB)AddUser(username, password string)*model.User{
 	passwordHash := cdb.HashPassword(username,password)
 	user := &model.User{
