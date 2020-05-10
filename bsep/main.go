@@ -91,7 +91,8 @@ func main() {
 	e.GET("/certificate/:number", certificateHandler.Check)
 	e.POST("/revoke/:number", certificateHandler.Revoke)
 	e.POST("/download/:number", certificateHandler.Download)
-	e.Server.Addr = ":8080"
-	e.Logger.Fatal(e.Start(":8080"))
+	//e.Server.Addr = ":8080"
+	e.Logger.Fatal(e.StartTLS(":1323","certificate/cert.pem","certificate/key.pem"))
+
 
 }
