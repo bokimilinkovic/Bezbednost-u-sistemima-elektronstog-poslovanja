@@ -8,6 +8,8 @@
                 <div class="panel-heading">Welcome back</div>
                 <div class="panel-body">
                     <form action="/api/user/login" method="POST">
+                        {{ csrfField }}
+                        <input type="hidden" name="csrf" value="{{.csrfField}}">
                         <div class="form-group">
                             <label for="text">Username</label>
                             <input type="text" name="username" class="form-control" id="username" placeholder="Enter username">

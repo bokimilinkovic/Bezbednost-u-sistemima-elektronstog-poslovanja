@@ -5,6 +5,7 @@ import (
 	"bsep/service"
 	"errors"
 	"fmt"
+	"github.com/gorilla/csrf"
 	"github.com/gorilla/sessions"
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
@@ -25,6 +26,7 @@ func NewLoginHandler(domain string, us *service.UserService, tpl *template.Templ
 type UserJSON struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
+	Token    string  `json:"gorilla.csrf.Token"`
 }
 
 func (lg *LoginHandler) SignUp(c echo.Context) error {
@@ -52,7 +54,17 @@ func (lg *LoginHandler) Register(c echo.Context) error {
 }
 
 func(lg *LoginHandler)LoginHtml(c echo.Context)error{
-	return lg.tpl.ExecuteTemplate(c.Response().Writer,"login.gohtml",nil)
+	csrfField := csrf.TemplateField(c.Request())
+	tpl := lg.tpl.Funcs(template.FuncMap{
+		"csrfField": func()template.HTML{
+			return csrfField
+		},
+	})
+	fmt.Println(csrfField)
+	//data := map[string]interface{}{
+	//	csrf.TemplateTag: csrftoken,
+	//}
+	return tpl.ExecuteTemplate(c.Response().Writer,"login.gohtml",nil)
 }
 
 func(lg *LoginHandler)Login(c echo.Context)error {
@@ -73,6 +85,7 @@ func(lg *LoginHandler)Login(c echo.Context)error {
 		http.Error(c.Response().Writer, "Missing username or password", http.StatusBadRequest)
 		return err
 	}
+	fmt.Println("TOKEN JE: ", jsondata.Token)
 	user := lg.userService.DB.FindUser(jsondata.Username)
 	if user.Username == "" {
 		http.Error(c.Response().Writer, "username not found", http.StatusBadRequest)

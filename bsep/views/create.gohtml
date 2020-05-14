@@ -4,7 +4,8 @@
     <br>
     <h2>Create new certificate</h2>
     <div  style=" background-color: #3CBC8D">
-        <form method="post" enctype="multipart/form-data" action="http://localhost:8080/create">
+        <form method="post" enctype="multipart/form-data" action="https://localhost:1323/create">
+            {{ csrfField }}
             <div class="form-row">
                 <div class="form-group col-md-6">
                     <label>Country</label>
@@ -72,7 +73,7 @@
                 <div class="form-group col-md-4">
                     <select id="inputState" class="form-control" name="issuer">
                         <option selected>root - self signed</option>
-                        {{range $element,$value := .}}
+                        {{range $element,$value := .infos}}
                             <option>{{$value}}</option>
                         {{end}}
                     </select>

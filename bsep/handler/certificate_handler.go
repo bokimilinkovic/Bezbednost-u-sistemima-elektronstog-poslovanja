@@ -7,6 +7,7 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
+	"github.com/gorilla/csrf"
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
 	"html/template"
@@ -31,15 +32,26 @@ const maxUploadSize = 2 * 1024 * 1024 // 2 mb
 const uploadPath = "./keys"
 
 func (ch *CertificateHandler) CreateNew(c echo.Context) error {
-	data := []string{}
+	csrfField := csrf.TemplateField(c.Request())
+	tpl := ch.tpl.Funcs(template.FuncMap{
+		"csrfField": func()template.HTML{
+			return csrfField
+		},
+	})
+	fmt.Println(csrfField)
+	infos := []string{}
 	certs := ch.certificateService.ValidToCA()
 	for _, c := range certs {
 		majorInfo := fmt.Sprintf("%s, %s, %s, %s, %s, %s, %s", c.Subject.Organization[0], c.Subject.StreetAddress[0], c.Subject.Locality[0], c.Subject.Province[0], c.Subject.Country[0], c.Subject.SerialNumber, c.Subject.PostalCode[0])
 		fmt.Println(majorInfo)
-		data = append(data, majorInfo)
+		infos = append(infos, majorInfo)
+	}
+	data := map[string]interface{}{
+		//csrf.TemplateTag: csrftoken,
+		"infos": infos,
 	}
 
-	return ch.tpl.ExecuteTemplate(c.Response().Writer,"create.gohtml",data)
+	return tpl.ExecuteTemplate(c.Response().Writer,"create.gohtml",data)
 }
 
 func (ch *CertificateHandler) Create(c echo.Context) error {
