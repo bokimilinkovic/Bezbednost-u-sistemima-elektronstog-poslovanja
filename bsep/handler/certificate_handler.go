@@ -2,10 +2,13 @@ package handler
 
 import (
 	"bsep/handler/dto"
+	"bsep/model"
 	"bsep/service"
 	"crypto/x509"
 	"errors"
 	"fmt"
+	"github.com/gorilla/csrf"
+	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
 	"html/template"
 	"io"
@@ -17,29 +20,78 @@ import (
 
 type CertificateHandler struct {
 	certificateService *service.CertificateService
+	userService *service.UserService
 	tpl *template.Template
 }
 
-func NewCertificateHandler(cs *service.CertificateService, tpl *template.Template) *CertificateHandler {
-	return &CertificateHandler{certificateService: cs, tpl:tpl}
+func NewCertificateHandler(cs *service.CertificateService, tpl *template.Template, userService *service.UserService) *CertificateHandler {
+	return &CertificateHandler{certificateService: cs, tpl:tpl, userService: userService}
 }
 
 const maxUploadSize = 2 * 1024 * 1024 // 2 mb
 const uploadPath = "./keys"
 
 func (ch *CertificateHandler) CreateNew(c echo.Context) error {
-	data := []string{}
+	//Get use and check permission
+	user, ok := c.Get("user").(*model.User)
+	if !ok{
+		return errors.New("Error getting user from context")
+	}
+	fmt.Println(user.Username + " " + user.Roles[0].Name + " " + user.Roles[0].Permissions[0].Name)
+	isAuthorize := false
+	for _, role := range user.Roles{
+		for _, permi := range role.Permissions{
+			if permi.Name == model.CreateCertificateAuth{
+				isAuthorize = true
+				break
+			}
+		}
+	}
+	if !isAuthorize{
+		return echo.NewHTTPError(http.StatusForbidden,"You are not authorized to do that")
+	}
+
+	csrfField := csrf.TemplateField(c.Request())
+	tpl := ch.tpl.Funcs(template.FuncMap{
+		"csrfField": func()template.HTML{
+			return csrfField
+		},
+	})
+	fmt.Println(csrfField)
+
+	infos := []string{}
 	certs := ch.certificateService.ValidToCA()
 	for _, c := range certs {
 		majorInfo := fmt.Sprintf("%s, %s, %s, %s, %s, %s, %s", c.Subject.Organization[0], c.Subject.StreetAddress[0], c.Subject.Locality[0], c.Subject.Province[0], c.Subject.Country[0], c.Subject.SerialNumber, c.Subject.PostalCode[0])
 		fmt.Println(majorInfo)
-		data = append(data, majorInfo)
+		infos = append(infos, majorInfo)
+	}
+	data := map[string]interface{}{
+		//csrf.TemplateTag: csrftoken,
+		"infos": infos,
 	}
 
-	return ch.tpl.ExecuteTemplate(c.Response().Writer,"create.gohtml",data)
+	return tpl.ExecuteTemplate(c.Response().Writer,"create.gohtml",data)
 }
 
 func (ch *CertificateHandler) Create(c echo.Context) error {
+	user, ok := c.Get("user").(*model.User)
+	if !ok{
+		return errors.New("Error getting user from context")
+	}
+	fmt.Println(user.Username + " " + user.Roles[0].Name + " " + user.Roles[0].Permissions[0].Name)
+	isAuthorize := false
+	for _, role := range user.Roles{
+		for _, permi := range role.Permissions{
+			if permi.Name == model.CreateCertificateAuth{
+				isAuthorize = true
+				break
+			}
+		}
+	}
+	if !isAuthorize{
+		return echo.NewHTTPError(http.StatusForbidden,"You are not authorized to do that")
+	}
 	var request dto.CertificateRequest
 	err := c.Bind(&request)
 	if err != nil {
@@ -55,21 +107,53 @@ func (ch *CertificateHandler) Create(c echo.Context) error {
 }
 
 func (ch *CertificateHandler) Home(c echo.Context) error {
+	sess,_ := session.Get("session",c)
+	userID ,ok := sess.Values["userID"].(int)
+	var user *model.User
+	if !ok {
+		user = nil
+	}
+	if ok{
+		user, _= ch.userService.DB.FindUserByID(userID)
+	}
+	fmt.Println("USER:" , user, " ID : ", userID)
+	type UserInfo struct{
+		User *model.User
+		Admin bool
+	}
+	type Response struct{
+		UserInfo *UserInfo
+		Certificats []dto.CertificateResponse
+	}
 	certificates, err := ch.certificateService.ReadKeyStoreAllInfo()
 	if err != nil {
 		return err
 	}
-	if len(certificates) == 0 {
-		return ch.tpl.ExecuteTemplate(c.Response().Writer,"home.gohtml", []dto.CertificateResponse{})
-	}
+	//if len(certificates) == 0 {
+	//	return ch.tpl.ExecuteTemplate(c.Response().Writer,"home.gohtml", []dto.CertificateResponse{})
+	//}
 	responses := []dto.CertificateResponse{}
 	for _, c := range certificates {
 		revoked := ch.certificateService.IsRevoked(c)
 		valid := ch.certificateService.ValidCertificate(c)
 		responses = append(responses, toCertificateResponse(c, revoked, valid))
 	}
-
-	return ch.tpl.ExecuteTemplate(c.Response().Writer,"home.gohtml",responses)
+	admin := false
+	if user != nil{
+		for _, role := range user.Roles{
+			if role.Name == "Admin"{
+				admin = true
+				break
+			}
+		}
+	}
+	userinfo := UserInfo{User:user, Admin:admin}
+	response := Response{
+		UserInfo: &userinfo,
+		Certificats: responses,
+	}
+	fmt.Println(userinfo.User)
+	return ch.tpl.ExecuteTemplate(c.Response().Writer,"home.gohtml",response)
 }
 
 func (ch *CertificateHandler) ReadAllInfo(c echo.Context) error {

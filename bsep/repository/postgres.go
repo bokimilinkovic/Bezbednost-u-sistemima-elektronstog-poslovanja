@@ -2,10 +2,10 @@ package repository
 
 import (
 	"bsep/model"
-	"errors"
 	"fmt"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
+	"golang.org/x/crypto/bcrypt"
 	"time"
 )
 
@@ -49,7 +49,7 @@ func (cdb *CertificateDB) AutoMigrate() error {
 	if count == 0 {
 		user := &model.User{
 			Username: "admin",
-			Password: "admin",
+			//Password: "admin",
 		}
 		err := cdb.db.Create(&user).Error
 		if err != nil {
@@ -73,9 +73,9 @@ func (cdb *CertificateDB) ValidateUser(username string, pass string) error {
 	if err != nil {
 		return err
 	}
-	if user.Password != pass {
-		return errors.New("Invalid password")
-	}
+	//if user.Password != pass {
+	//	return errors.New("Invalid password")
+	//}
 	return nil
 }
 
@@ -93,4 +93,60 @@ func (cdb *CertificateDB) GetAllRevoked() ([]*model.Revoked, error) {
 		return nil, err
 	}
 	return revoked, nil
+}
+
+func(cdb *CertificateDB)DB() *gorm.DB{
+	return cdb.db
+}
+
+func(cdb *CertificateDB)HasUser(username string)bool {
+	if err := cdb.db.Where("username = ?", username).Find(&model.User{}).Error; err != nil {
+		return false
+	}
+	return true
+}
+
+func(cdb *CertificateDB)FindUser(username string) *model.User{
+	user := &model.User{}
+	cdb.db.Preload("Roles.Permissions").Where("username = ?", username).Find(&user)
+	return user
+}
+
+func(cdb *CertificateDB)FindUserByID(id int)(*model.User, error){
+	user := &model.User{}
+	err := cdb.db.Preload("Roles.Permissions").Where("id = ?", id).Find(&user).Error
+	if err != nil {
+		return nil,err
+	}
+
+	return user, nil
+}
+
+func(cdb *CertificateDB)AddUser(username, password string)*model.User{
+	passwordHash := cdb.HashPassword(username,password)
+	user := &model.User{
+		Username: username,
+		PasswordHash: passwordHash,
+	}
+	defaultRole := &model.Role{Name:"Client"}
+	defaultPermission := &model.Permission{Name:"Visit"}
+	defaultRole.Permissions = append(defaultRole.Permissions,defaultPermission)
+	user.Roles = append(user.Roles,defaultRole)
+	cdb.db.Create(&user)
+	return user
+}
+
+func(cdb *CertificateDB)HashPassword(username, password string) string{
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		panic("Permissions: bcrypt password hasnig unsuccessful")
+	}
+	return string(hash)
+}
+
+func(cdb *CertificateDB)CheckPassword(hashedPass, password string) bool {
+	if bcrypt.CompareHashAndPassword([]byte(hashedPass), []byte(password)) != nil {
+		return  false
+	}
+	return  true
 }
