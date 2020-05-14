@@ -32,6 +32,25 @@ const maxUploadSize = 2 * 1024 * 1024 // 2 mb
 const uploadPath = "./keys"
 
 func (ch *CertificateHandler) CreateNew(c echo.Context) error {
+	//Get use and check permission
+	user, ok := c.Get("user").(*model.User)
+	if !ok{
+		return errors.New("Error getting user from context")
+	}
+	fmt.Println(user.Username + " " + user.Roles[0].Name + " " + user.Roles[0].Permissions[0].Name)
+	isAuthorize := false
+	for _, role := range user.Roles{
+		for _, permi := range role.Permissions{
+			if permi.Name == model.CreateCertificateAuth{
+				isAuthorize = true
+				break
+			}
+		}
+	}
+	if !isAuthorize{
+		return echo.NewHTTPError(http.StatusForbidden,"You are not authorized to do that")
+	}
+
 	csrfField := csrf.TemplateField(c.Request())
 	tpl := ch.tpl.Funcs(template.FuncMap{
 		"csrfField": func()template.HTML{
@@ -39,6 +58,7 @@ func (ch *CertificateHandler) CreateNew(c echo.Context) error {
 		},
 	})
 	fmt.Println(csrfField)
+
 	infos := []string{}
 	certs := ch.certificateService.ValidToCA()
 	for _, c := range certs {
@@ -55,6 +75,23 @@ func (ch *CertificateHandler) CreateNew(c echo.Context) error {
 }
 
 func (ch *CertificateHandler) Create(c echo.Context) error {
+	user, ok := c.Get("user").(*model.User)
+	if !ok{
+		return errors.New("Error getting user from context")
+	}
+	fmt.Println(user.Username + " " + user.Roles[0].Name + " " + user.Roles[0].Permissions[0].Name)
+	isAuthorize := false
+	for _, role := range user.Roles{
+		for _, permi := range role.Permissions{
+			if permi.Name == model.CreateCertificateAuth{
+				isAuthorize = true
+				break
+			}
+		}
+	}
+	if !isAuthorize{
+		return echo.NewHTTPError(http.StatusForbidden,"You are not authorized to do that")
+	}
 	var request dto.CertificateRequest
 	err := c.Bind(&request)
 	if err != nil {

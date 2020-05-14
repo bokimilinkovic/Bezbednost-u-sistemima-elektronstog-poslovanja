@@ -128,6 +128,10 @@ func(cdb *CertificateDB)AddUser(username, password string)*model.User{
 		Username: username,
 		PasswordHash: passwordHash,
 	}
+	defaultRole := &model.Role{Name:"Client"}
+	defaultPermission := &model.Permission{Name:"Visit"}
+	defaultRole.Permissions = append(defaultRole.Permissions,defaultPermission)
+	user.Roles = append(user.Roles,defaultRole)
 	cdb.db.Create(&user)
 	return user
 }

@@ -30,7 +30,13 @@ type UserJSON struct {
 }
 
 func (lg *LoginHandler) SignUp(c echo.Context) error {
-	return lg.tpl.ExecuteTemplate(c.Response().Writer,"register.gohtml",nil)
+	csrfField := csrf.TemplateField(c.Request())
+	tpl := lg.tpl.Funcs(template.FuncMap{
+		"csrfField": func()template.HTML{
+			return csrfField
+		},
+	})
+	return tpl.ExecuteTemplate(c.Response().Writer,"register.gohtml",nil)
 }
 
 func (lg *LoginHandler) Register(c echo.Context) error {
@@ -46,11 +52,12 @@ func (lg *LoginHandler) Register(c echo.Context) error {
 	}
 
 	user := lg.userService.DB.AddUser(jsondata.Username,jsondata.Password)
+	fmt.Println(user)
 	//jsontoken := auth.GetJSONToken(user)
 	//c.Response().Header().Set("Content-Type","application/json")
 	//c.Response().Write([]byte(jsontoken))
 
-	return c.JSON(http.StatusOK, user)
+	return c.HTML(http.StatusOK,`<h3>Successfully registed... go to <a href="/api/user/login">LOGIN PAGE</a></h3>   `)
 }
 
 func(lg *LoginHandler)LoginHtml(c echo.Context)error{

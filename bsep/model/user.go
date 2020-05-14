@@ -1,5 +1,10 @@
 package model
 
+var(
+	CreateCertificateAuth = "Create-Certificate"
+	RevokeCertificateAuth = "Revoke-Certificate"
+)
+
 type User struct {
 	ID int `gorm:"primary_key"`
 	Username string `gorm:"not null;unique"`
