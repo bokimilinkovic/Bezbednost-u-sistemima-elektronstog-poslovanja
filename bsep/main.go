@@ -94,6 +94,9 @@ func main() {
 
 	e.Use(echo.WrapMiddleware(CSRF))
 	e.Use(session.Middleware(sessions.NewCookieStore(rawSessionAuthKey,rawSessionEncryptionKey)))
+	e.Use(echomiddleware.SecureWithConfig(echomiddleware.SecureConfig{
+		XSSProtection:"1; mode=block",
+	}))
 	//e.Use(echomiddleware.CSRFWithConfig(echomiddleware.CSRFConfig{
 	//	TokenLookup: "form:csrf",
 	//}))
