@@ -1,0 +1,82 @@
+
+   ____    __
+  / __/___/ /  ___
+ / _// __/ _ \/ _ \
+/___/\__/_//_/\___/ v4.1.16
+High performance, minimalist Go web framework
+https://echo.labstack.com
+____________________________________O/_______
+                                    O\
+⇨ https server started on [::]:1323
+{"time":"2020-05-17T13:22:15.121004534+02:00","id":"","remote_ip":"::1","host":"localhost:1323","method":"GET","uri":"/createnew","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.70 Safari/537.36","status":500,"error":"no value for wanted key - userID","latency":464281,"latency_human":"464.281µs","bytes_in":0,"bytes_out":36}
+{"time":"2020-05-17T13:22:15.20591944+02:00","id":"","remote_ip":"::1","host":"localhost:1323","method":"GET","uri":"/favicon.ico","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.70 Safari/537.36","status":404,"error":"code=404, message=Not Found","latency":90491,"latency_human":"90.491µs","bytes_in":0,"bytes_out":24}
+{"time":"2020-05-17T13:22:25.248905054+02:00","id":"","remote_ip":"::1","host":"localhost:1323","method":"GET","uri":"/api/user/login","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.70 Safari/537.36","status":200,"error":"","latency":338739,"latency_human":"338.739µs","bytes_in":0,"bytes_out":2168}
+{"time":"2020-05-17T13:22:30.343850946+02:00","id":"","remote_ip":"::1","host":"localhost:1323","method":"POST","uri":"/api/user/login","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.70 Safari/537.36","status":302,"error":"","latency":298127484,"latency_human":"298.127484ms","bytes_in":149,"bytes_out":0}
+{"time":"2020-05-17T13:22:30.399437126+02:00","id":"","remote_ip":"::1","host":"localhost:1323","method":"GET","uri":"/home","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.70 Safari/537.36","status":200,"error":"","latency":52781981,"latency_human":"52.781981ms","bytes_in":0,"bytes_out":5050}
+{"time":"2020-05-17T13:22:31.938937741+02:00","id":"","remote_ip":"::1","host":"localhost:1323","method":"GET","uri":"/createnew","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.70 Safari/537.36","status":200,"error":"","latency":4692986,"latency_human":"4.692986ms","bytes_in":0,"bytes_out":5582}
+{"time":"2020-05-17T13:22:33.132285691+02:00","id":"","remote_ip":"::1","host":"localhost:1323","method":"GET","uri":"/home","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.70 Safari/537.36","status":200,"error":"","latency":6392478,"latency_human":"6.392478ms","bytes_in":0,"bytes_out":5050}
+{"time":"2020-05-17T13:22:36.007166061+02:00","id":"","remote_ip":"::1","host":"localhost:1323","method":"GET","uri":"/api/user/logout","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.70 Safari/537.36","status":302,"error":"","latency":307132,"latency_human":"307.132µs","bytes_in":0,"bytes_out":0}
+{"time":"2020-05-17T13:22:36.016768356+02:00","id":"","remote_ip":"::1","host":"localhost:1323","method":"GET","uri":"/home","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.70 Safari/537.36","status":200,"error":"","latency":5288109,"latency_human":"5.288109ms","bytes_in":0,"bytes_out":4929}
+{"time":"2020-05-17T13:22:37.467755519+02:00","id":"","remote_ip":"::1","host":"localhost:1323","method":"GET","uri":"/api/user/login","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.70 Safari/537.36","status":200,"error":"","latency":206660,"latency_human":"206.66µs","bytes_in":0,"bytes_out":2168}
+{"time":"2020-05-17T13:22:42.638569813+02:00","id":"","remote_ip":"::1","host":"localhost:1323","method":"POST","uri":"/api/user/login","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.70 Safari/537.36","status":302,"error":"","latency":96668359,"latency_human":"96.668359ms","bytes_in":157,"bytes_out":0}
+{"time":"2020-05-17T13:22:42.646166169+02:00","id":"","remote_ip":"::1","host":"localhost:1323","method":"GET","uri":"/home","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.70 Safari/537.36","status":200,"error":"","latency":4897659,"latency_human":"4.897659ms","bytes_in":0,"bytes_out":4931}
+
+   ____    __
+  / __/___/ /  ___
+ / _// __/ _ \/ _ \
+/___/\__/_//_/\___/ v4.1.16
+High performance, minimalist Go web framework
+https://echo.labstack.com
+____________________________________O/_______
+                                    O\
+⇨ https server started on [::]:1323
+INFO: 2020/05/17 13:33:14 login_handler.go:137: USER LOGGED OUT: 
+{"time":"2020-05-17T13:33:14.62283787+02:00","id":"","remote_ip":"::1","host":"localhost:1323","method":"GET","uri":"/api/user/logout","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.70 Safari/537.36","status":302,"error":"","latency":393395,"latency_human":"393.395µs","bytes_in":0,"bytes_out":0}
+{"time":"2020-05-17T13:33:14.633452449+02:00","id":"","remote_ip":"::1","host":"localhost:1323","method":"GET","uri":"/home","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.70 Safari/537.36","status":200,"error":"","latency":5188469,"latency_human":"5.188469ms","bytes_in":0,"bytes_out":4929}
+{"time":"2020-05-17T13:33:16.537164135+02:00","id":"","remote_ip":"::1","host":"localhost:1323","method":"GET","uri":"/api/user/login","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.70 Safari/537.36","status":200,"error":"","latency":195226,"latency_human":"195.226µs","bytes_in":0,"bytes_out":2168}
+INFO: 2020/05/17 13:33:21 login_handler.go:113: USER LOGGED IN:  admin
+{"time":"2020-05-17T13:33:21.912368553+02:00","id":"","remote_ip":"::1","host":"localhost:1323","method":"POST","uri":"/api/user/login","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.70 Safari/537.36","status":302,"error":"","latency":98830692,"latency_human":"98.830692ms","bytes_in":151,"bytes_out":0}
+{"time":"2020-05-17T13:33:21.920917218+02:00","id":"","remote_ip":"::1","host":"localhost:1323","method":"GET","uri":"/home","user_agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/78.0.3904.70 Safari/537.36","status":200,"error":"","latency":6479375,"latency_human":"6.479375ms","bytes_in":0,"bytes_out":5050}
+INFO: 2020/05/17 13:34:27 main.go:93: TODAY IS : 2020-05-17 13:34:27.045005464 +0200 CEST m=+0.053448531
+
+   ____    __
+  / __/___/ /  ___
+ / _// __/ _ \/ _ \
+/___/\__/_//_/\___/ v4.1.16
+High performance, minimalist Go web framework
+https://echo.labstack.com
+____________________________________O/_______
+                                    O\
+⇨ https server started on [::]:1323
+
+   ____    __
+  / __/___/ /  ___
+ / _// __/ _ \/ _ \
+/___/\__/_//_/\___/ v4.1.16
+High performance, minimalist Go web framework
+https://echo.labstack.com
+____________________________________O/_______
+                                    O\
+⇨ https server started on [::]:1323
+INFO: 2020/05/17 13:35:40 main.go:142: TODAY IS : 2020-05-17 13:35:40.802465257 +0200 CEST m=+0.052218419
+
+   ____    __
+  / __/___/ /  ___
+ / _// __/ _ \/ _ \
+/___/\__/_//_/\___/ v4.1.16
+High performance, minimalist Go web framework
+https://echo.labstack.com
+____________________________________O/_______
+                                    O\
+⇨ https server started on [::]:1323
+INFO: 2020/05/17 13:42:02 main.go:142: TODAY IS : 2020-05-17 13:42:02.280740528 +0200 CEST m=+0.052397732
+
+   ____    __
+  / __/___/ /  ___
+ / _// __/ _ \/ _ \
+/___/\__/_//_/\___/ v4.1.16
+High performance, minimalist Go web framework
+https://echo.labstack.com
+____________________________________O/_______
+                                    O\
+⇨ https server started on [::]:1323

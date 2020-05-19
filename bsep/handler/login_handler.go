@@ -10,6 +10,7 @@ import (
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
 	"html/template"
+	"log"
 	"net/http"
 )
 
@@ -17,10 +18,11 @@ type LoginHandler struct {
 	domain string
 	userService *service.UserService
 	tpl *template.Template
+	logger *log.Logger
 }
 
-func NewLoginHandler(domain string, us *service.UserService, tpl *template.Template) *LoginHandler {
-	return &LoginHandler{domain: domain, userService: us,tpl: tpl}
+func NewLoginHandler(domain string, us *service.UserService, tpl *template.Template, logger *log.Logger) *LoginHandler {
+	return &LoginHandler{domain: domain, userService: us,tpl: tpl, logger: logger}
 }
 
 type UserJSON struct {
@@ -53,6 +55,7 @@ func (lg *LoginHandler) Register(c echo.Context) error {
 
 	user := lg.userService.DB.AddUser(jsondata.Username,jsondata.Password)
 	fmt.Println(user)
+	lg.logger.Println("NEW USER REGISTERED: ",user.Username)
 	//jsontoken := auth.GetJSONToken(user)
 	//c.Response().Header().Set("Content-Type","application/json")
 	//c.Response().Write([]byte(jsontoken))
@@ -107,6 +110,7 @@ func(lg *LoginHandler)Login(c echo.Context)error {
 	if err := sess.Save(c.Request(), c.Response()); err != nil {
 		return err
 	}
+	lg.logger.Println("USER LOGGED IN: ",user.Username)
 
 	return c.Redirect(302,"/home")
 }
@@ -127,7 +131,11 @@ func(lg *LoginHandler)Logout(c echo.Context)error{
 	if err != nil {
 		fmt.Println(err.Error())
 		return err
+
+
 	}
+	lg.logger.Println("USER LOGGED OUT: ")
+
 	return c.Redirect(http.StatusFound, "/home")
 }
 
