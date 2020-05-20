@@ -5,11 +5,13 @@ import (
 	"bsep/service"
 	"errors"
 	"fmt"
+	"github.com/casbin/casbin"
 	"github.com/gorilla/csrf"
 	"github.com/gorilla/sessions"
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
 	"html/template"
+	"io/ioutil"
 	"log"
 	"net/http"
 )
@@ -147,4 +149,27 @@ func(lg *LoginHandler)CheckUser(c echo.Context)error{
 	}
 
 	return c.String(http.StatusOK,"Welcome: " + user.Username)
+}
+
+func(lg *LoginHandler)ReadLog(c echo.Context)error{
+	user, ok := c.Get("user").(*model.User)
+	if !ok{
+		return echo.NewHTTPError(http.StatusInternalServerError,"error retrieving user from context")
+	}
+	fmt.Println(user.Username)
+	e := casbin.NewEnforcer("acl/model.conf","acl/pattern_policy.csv")
+	sub := user.Username
+	obj := "logfile"
+	act := "read"
+	if res := e.Enforce(sub,obj,act); res{
+		data, err := ioutil.ReadFile("logfile")
+		if err != nil {
+			fmt.Println(err.Error())
+			return err
+		}
+		fmt.Fprint(c.Response().Writer,string(data))
+		return nil
+	}
+	return errors.New("Not aloowed")
+
 }

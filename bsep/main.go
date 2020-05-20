@@ -126,6 +126,7 @@ func main() {
 	userApi.POST("/login", loginHandler.Login)
 	userApi.GET("/logout",loginHandler.Logout)
 	userApi.GET("/private", loginHandler.CheckUser, userLoader.Do)
+	userApi.GET("/readlog", loginHandler.ReadLog, userLoader.Do)
 	//e.GET("/login", loginHandler.Login)
 	//e.POST("/loging",loginHandler.Logging)
 	e.GET("/createnew", certificateHandler.CreateNew, userLoader.Do)
@@ -135,6 +136,7 @@ func main() {
 	e.GET("/certificate/:number", certificateHandler.Check)
 	e.POST("/revoke/:number", certificateHandler.Revoke)
 	e.POST("/download/:number", certificateHandler.Download)
+
 	//e.Use(echomiddleware.CSRFWithConfig(echomiddleware.CSRFConfig{
 	//	TokenLookup: "header:X-XSRF-TOKEN",
 	//}))
