@@ -3,6 +3,7 @@ module bsep
 go 1.12
 
 require (
+	github.com/casbin/casbin v1.9.1
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/gorilla/csrf v1.7.0
 	github.com/gorilla/sessions v1.2.0

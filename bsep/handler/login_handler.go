@@ -5,11 +5,14 @@ import (
 	"bsep/service"
 	"errors"
 	"fmt"
+	"github.com/casbin/casbin"
 	"github.com/gorilla/csrf"
 	"github.com/gorilla/sessions"
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
 	"html/template"
+	"io/ioutil"
+	"log"
 	"net/http"
 )
 
@@ -17,10 +20,11 @@ type LoginHandler struct {
 	domain string
 	userService *service.UserService
 	tpl *template.Template
+	logger *log.Logger
 }
 
-func NewLoginHandler(domain string, us *service.UserService, tpl *template.Template) *LoginHandler {
-	return &LoginHandler{domain: domain, userService: us,tpl: tpl}
+func NewLoginHandler(domain string, us *service.UserService, tpl *template.Template, logger *log.Logger) *LoginHandler {
+	return &LoginHandler{domain: domain, userService: us,tpl: tpl, logger: logger}
 }
 
 type UserJSON struct {
@@ -53,6 +57,7 @@ func (lg *LoginHandler) Register(c echo.Context) error {
 
 	user := lg.userService.DB.AddUser(jsondata.Username,jsondata.Password)
 	fmt.Println(user)
+	lg.logger.Println("NEW USER REGISTERED: ",user.Username)
 	//jsontoken := auth.GetJSONToken(user)
 	//c.Response().Header().Set("Content-Type","application/json")
 	//c.Response().Write([]byte(jsontoken))
@@ -107,6 +112,7 @@ func(lg *LoginHandler)Login(c echo.Context)error {
 	if err := sess.Save(c.Request(), c.Response()); err != nil {
 		return err
 	}
+	lg.logger.Println("USER LOGGED IN: ",user.Username)
 
 	return c.Redirect(302,"/home")
 }
@@ -127,7 +133,11 @@ func(lg *LoginHandler)Logout(c echo.Context)error{
 	if err != nil {
 		fmt.Println(err.Error())
 		return err
+
+
 	}
+	lg.logger.Println("USER LOGGED OUT: ")
+
 	return c.Redirect(http.StatusFound, "/home")
 }
 
@@ -139,4 +149,27 @@ func(lg *LoginHandler)CheckUser(c echo.Context)error{
 	}
 
 	return c.String(http.StatusOK,"Welcome: " + user.Username)
+}
+
+func(lg *LoginHandler)ReadLog(c echo.Context)error{
+	user, ok := c.Get("user").(*model.User)
+	if !ok{
+		return echo.NewHTTPError(http.StatusInternalServerError,"error retrieving user from context")
+	}
+	fmt.Println(user.Username)
+	e := casbin.NewEnforcer("acl/model.conf","acl/pattern_policy.csv")
+	sub := user.Username
+	obj := "logfile"
+	act := "read"
+	if res := e.Enforce(sub,obj,act); res{
+		data, err := ioutil.ReadFile("logfile")
+		if err != nil {
+			fmt.Println(err.Error())
+			return err
+		}
+		fmt.Fprint(c.Response().Writer,string(data))
+		return nil
+	}
+	return errors.New("Not aloowed")
+
 }

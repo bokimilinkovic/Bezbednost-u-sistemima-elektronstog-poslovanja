@@ -16,8 +16,10 @@ import (
 	"github.com/labstack/echo/v4"
 	echomiddleware "github.com/labstack/echo/v4/middleware"
 	"html/template"
+	"log"
 	"os"
 	"strconv"
+	"time"
 )
 
 var tpl *template.Template
@@ -73,11 +75,29 @@ func main() {
 	certificateService := &service.CertificateService{CertificateDB: store}
 	loginService := &service.UserService{DB: store}
 	certificateHandler := handler.NewCertificateHandler(certificateService, tpl,loginService)
-	loginHandler := handler.NewLoginHandler(domain,loginService, tpl)
+
 	userLoader := middleware.UserLoader{UserService:loginService}
 
+	//Logging and monitoring
+	if !FileExists("logfile"){
+		CreateFile("logfile")
+	}
+	f, err := os.OpenFile("logfile", os.O_RDWR | os.O_CREATE | os.O_APPEND, 066)
+	if err != nil{
+		log.Fatal("Error openning file: %v", err)
+	}
+	defer f.Close()
+
+
+	logger := log.New(f, "INFO: ", log.Ldate | log.Ltime | log.Lshortfile)
+
+	loginHandler := handler.NewLoginHandler(domain,loginService, tpl, logger)
+
 	e := echo.New()
-	e.Use(echomiddleware.Logger())
+	e.Logger.SetOutput(f)
+	e.Use(echomiddleware.LoggerWithConfig(echomiddleware.LoggerConfig{
+		Output: f,
+	}))
 	fmt.Println("Server started")
 	authkey, err := GenerateRandomString(32)
 	if err != nil{
@@ -106,6 +126,7 @@ func main() {
 	userApi.POST("/login", loginHandler.Login)
 	userApi.GET("/logout",loginHandler.Logout)
 	userApi.GET("/private", loginHandler.CheckUser, userLoader.Do)
+	userApi.GET("/readlog", loginHandler.ReadLog, userLoader.Do)
 	//e.GET("/login", loginHandler.Login)
 	//e.POST("/loging",loginHandler.Logging)
 	e.GET("/createnew", certificateHandler.CreateNew, userLoader.Do)
@@ -115,10 +136,12 @@ func main() {
 	e.GET("/certificate/:number", certificateHandler.Check)
 	e.POST("/revoke/:number", certificateHandler.Revoke)
 	e.POST("/download/:number", certificateHandler.Download)
+
 	//e.Use(echomiddleware.CSRFWithConfig(echomiddleware.CSRFConfig{
 	//	TokenLookup: "header:X-XSRF-TOKEN",
 	//}))
 	//e.Server.Addr = ":8080"
+	logger.Printf("TODAY IS : %v", time.Now())
 	e.Logger.Fatal(e.StartTLS(":1323","certificate/cert.pem","certificate/key.pem"))
 
 
@@ -145,4 +168,24 @@ func GenerateRandomBytes(n int) ([]byte, error) {
 	}
 
 	return b, nil
+}
+
+func FileExists(filename string)bool{
+	if _, err := os.Stat(filename); err != nil{
+		if os.IsNotExist(err){
+			return false
+		}
+	}
+	return true
+}
+
+func CreateFile(name string)error{
+	fo, err := os.Create(name)
+	if err != nil{
+		return err
+	}
+	defer func(){
+		fo.Close()
+	}()
+	return nil
 }
