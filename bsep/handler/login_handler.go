@@ -10,6 +10,7 @@ import (
 	"github.com/gorilla/sessions"
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
+	"gopkg.in/validator.v2"
 	"html/template"
 	"io/ioutil"
 	"log"
@@ -29,7 +30,7 @@ func NewLoginHandler(domain string, us *service.UserService, tpl *template.Templ
 
 type UserJSON struct {
 	Username string `json:"username"`
-	Password string `json:"password"`
+	Password string `json:"password" validate:"min=6, regexp=^[a-zA-Z0-9_!@#$_%^&*.?()-=+]*$"`
 	Token    string  `json:"gorilla.csrf.Token"`
 }
 
@@ -44,11 +45,17 @@ func (lg *LoginHandler) SignUp(c echo.Context) error {
 }
 
 func (lg *LoginHandler) Register(c echo.Context) error {
+	var validate = validator.NewValidator()
 	jsondata := UserJSON{}
 	err := c.Bind(&jsondata)
 	if err != nil || jsondata.Username == "" || jsondata.Password == "" {
 		http.Error(c.Response().Writer,"Missing username or password", http.StatusBadRequest)
 		return err
+	}
+	errs := validate.Validate(jsondata)
+	if errs != nil {
+		http.Error(c.Response().Writer,errs.Error(),http.StatusBadRequest)
+		return errs
 	}
 	if lg.userService.HasUser(jsondata.Username){
 		http.Error(c.Response().Writer,"Username already exists", http.StatusBadRequest)

@@ -1,10 +1,10 @@
 package dto
 
 type CertificateRequest struct {
-	Country              string `json:"country"`
-	Organization         string `json:"organization"`
-	PostalCode           string `json:"postalcode"`
-	StreetAddress        string `json:"streetaddress"`
+	Country              string `json:"country" validate:"min=2, max=20,regexp=^[a-zA-Z]*$"`
+	Organization         string `json:"organization" validate="min=2, max=20,regexp=^[a-zA-Z]*$"`
+	PostalCode           string `json:"postalcode" validate="regexp^[0-9]{1,6}$"`
+	StreetAddress        string `json:"streetaddress" validate:"min=2, max=40"`
 	Province             string `json:"province"`
 	EmailAddress         string `json:"emailaddress"`
 	Locality             string `json:"locality"`

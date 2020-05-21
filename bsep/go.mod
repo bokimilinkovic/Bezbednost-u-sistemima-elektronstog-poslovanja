@@ -13,4 +13,5 @@ require (
 	github.com/labstack/echo/v4 v4.1.16
 	github.com/pavel-v-chernykh/keystore-go v2.1.0+incompatible
 	golang.org/x/crypto v0.0.0-20200221231518-2aa609cf4a9d
+	gopkg.in/validator.v2 v2.0.0-20191107172027-c3144fdedc21
 )

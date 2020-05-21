@@ -10,6 +10,7 @@ import (
 	"github.com/gorilla/csrf"
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
+	validator2 "gopkg.in/validator.v2"
 	"html/template"
 	"io"
 	"net/http"
@@ -92,10 +93,16 @@ func (ch *CertificateHandler) Create(c echo.Context) error {
 	if !isAuthorize{
 		return echo.NewHTTPError(http.StatusForbidden,"You are not authorized to do that")
 	}
+	validator := validator2.NewValidator()
 	var request dto.CertificateRequest
 	err := c.Bind(&request)
 	if err != nil {
 		fmt.Println(err.Error())
+		return err
+	}
+	err = validator.Validate(request)
+	if err != nil{
+		http.Error(c.Response().Writer,err.Error(),http.StatusBadRequest)
 		return err
 	}
 	err = ch.certificateService.CreateCertificate(&request)
