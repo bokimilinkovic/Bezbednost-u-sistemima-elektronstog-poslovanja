@@ -160,7 +160,14 @@ func (ch *CertificateHandler) Home(c echo.Context) error {
 		Certificats: responses,
 	}
 	fmt.Println(userinfo.User)
-	return ch.tpl.ExecuteTemplate(c.Response().Writer,"home.gohtml",response)
+	csrfField := csrf.TemplateField(c.Request())
+	tpl := ch.tpl.Funcs(template.FuncMap{
+		"csrfField": func()template.HTML{
+			return csrfField
+		},
+	})
+	fmt.Println(csrfField)
+	return tpl.ExecuteTemplate(c.Response().Writer,"home.gohtml",response)
 }
 
 func (ch *CertificateHandler) ReadAllInfo(c echo.Context) error {
@@ -194,13 +201,32 @@ func (ch *CertificateHandler) Check(c echo.Context) error {
 
 func (ch *CertificateHandler) Revoke(c echo.Context) error {
 	//I need to splitr url path : /revoke/2313
+	user, ok := c.Get("user").(*model.User)
+	if !ok{
+		return echo.NewHTTPError(http.StatusForbidden,"You are not authorized to do that")
+	}
+	isAuthorize := false
+	for _, role := range user.Roles{
+		for _, permi := range role.Permissions{
+			if permi.Name == model.RevokeCertificateAuth{
+				isAuthorize = true
+				break
+			}
+		}
+	}
+	if !isAuthorize{
+		return echo.NewHTTPError(http.StatusForbidden,"You are not authorized to do that")
+	}
 	parts := strings.Split(c.Request().URL.Path, "/")
 	serialNumber := parts[2]
+	fmt.Println("**")
 	err := ch.certificateService.RevokeCertificate(serialNumber)
 	if err != nil {
 		fmt.Println("here we got the error : ", err.Error())
 		return err
 	}
+	//csrfField := csrf.TemplateField(c.Request())
+	//fmt.Println("****" , csrfField)
 	return c.HTML(http.StatusOK, `<body><h3>Successfully revoked...</h3><br><a href="/home">Go to home page</a></body>`)
 }
 

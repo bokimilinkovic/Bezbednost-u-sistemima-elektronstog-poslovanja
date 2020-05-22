@@ -31,7 +31,8 @@
                         <label>Already revoked</label>
                     {{else}}
                         {{if $element.Valid}}
-                            <form action="/revoke/{{.SerialNumber}}" method="POST" class="form-horizontal">
+                            <form action="/revoke/{{.SerialNumber}}" method="post" class="form-horizontal">
+                                {{ csrfField }}
                                 <button type="submit" class="btn btn-warning">Revoke</button>
                             </form>
                          {{else}}
@@ -42,6 +43,7 @@
                 <td>
                     {{if and $element.Valid (not $element.Revoked)}}
                         <form action="/download/{{.SerialNumber}}-{{.CommonName}}" method="post" class="form-horizontal">
+                            {{ csrfField }}
                             <button type="submit" class="btn btn-primary">Download</button>
                         </form>
                     {{else}}

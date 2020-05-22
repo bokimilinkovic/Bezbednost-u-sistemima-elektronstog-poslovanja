@@ -134,7 +134,7 @@ func main() {
 	e.GET("/readAll", certificateHandler.ReadAllInfo)
 	e.GET("/home", certificateHandler.Home)
 	e.GET("/certificate/:number", certificateHandler.Check)
-	e.POST("/revoke/:number", certificateHandler.Revoke)
+	e.POST("/revoke/:number", certificateHandler.Revoke, userLoader.Do)
 	e.POST("/download/:number", certificateHandler.Download)
 
 	//e.Use(echomiddleware.CSRFWithConfig(echomiddleware.CSRFConfig{
