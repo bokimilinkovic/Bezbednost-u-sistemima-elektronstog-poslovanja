@@ -2,6 +2,7 @@ package repository
 
 import (
 	"bsep/model"
+	mrand "math/rand"
 	"fmt"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
@@ -20,6 +21,13 @@ type PostgresConfig struct {
 	Password string
 	Name     string
 }
+
+const (
+	PW_SALT_BYTES = 32
+	PW_HASH_BYTES = 64
+    letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	)
+
 
 func NewCertificateDB(db *gorm.DB) *CertificateDB {
 	return &CertificateDB{db: db}
@@ -47,9 +55,11 @@ func (cdb *CertificateDB) AutoMigrate() error {
 		return err
 	}
 	if count == 0 {
+		hashedPass := cdb.HashPassword("admin","admin")
 		user := &model.User{
 			Username: "admin",
-			//Password: "admin",
+			PasswordHash: hashedPass,
+			Salt: "admin",
 		}
 		err := cdb.db.Create(&user).Error
 		if err != nil {
@@ -123,10 +133,13 @@ func(cdb *CertificateDB)FindUserByID(id int)(*model.User, error){
 }
 
 func(cdb *CertificateDB)AddUser(username, password string)*model.User{
-	passwordHash := cdb.HashPassword(username,password)
+	salt := RandomString(6)
+	fmt.Println(salt)
+	passwordHash := cdb.HashPassword(salt ,password)
 	user := &model.User{
 		Username: username,
 		PasswordHash: passwordHash,
+		Salt: salt,
 	}
 	defaultRole := &model.Role{Name:"Client"}
 	defaultPermission := &model.Permission{Name:"Visit"}
@@ -136,17 +149,28 @@ func(cdb *CertificateDB)AddUser(username, password string)*model.User{
 	return user
 }
 
-func(cdb *CertificateDB)HashPassword(username, password string) string{
-	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+func(cdb *CertificateDB)HashPassword(salt, password string) string{
+	hash, err := bcrypt.GenerateFromPassword([]byte(password + salt), bcrypt.DefaultCost)
 	if err != nil {
 		panic("Permissions: bcrypt password hasnig unsuccessful")
 	}
 	return string(hash)
 }
 
-func(cdb *CertificateDB)CheckPassword(hashedPass, password string) bool {
-	if bcrypt.CompareHashAndPassword([]byte(hashedPass), []byte(password)) != nil {
+func(cdb *CertificateDB)CheckPassword(user *model.User, password string) bool {
+	passToCompare := password + user.Salt
+	if bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(passToCompare)) != nil {
 		return  false
 	}
 	return  true
+}
+
+func RandomString(n int) string {
+	var letter = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+
+	b := make([]rune, n)
+	for i := range b {
+		b[i] = letter[mrand.Intn(len(letter))]
+	}
+	return string(b)
 }

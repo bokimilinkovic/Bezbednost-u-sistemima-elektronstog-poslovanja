@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"bsep/auth"
 	"bsep/model"
 	"bsep/service"
 	"errors"
@@ -15,6 +16,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/smtp"
 )
 
 type LoginHandler struct {
@@ -65,9 +67,20 @@ func (lg *LoginHandler) Register(c echo.Context) error {
 	user := lg.userService.DB.AddUser(jsondata.Username,jsondata.Password)
 	fmt.Println(user)
 	lg.logger.Println("NEW USER REGISTERED: ",user.Username)
-	//jsontoken := auth.GetJSONToken(user)
-	//c.Response().Header().Set("Content-Type","application/json")
-	//c.Response().Write([]byte(jsontoken))
+	jsontoken := auth.GetJSONToken(user)
+
+	//TODO: SEND EMAIL
+	authh := smtp.PlainAuth("", "konanvarvarin1997@gmail.com", "bojan1997", "smtp.gmail.com")
+	to := []string{user.Username}
+	msg := []byte(`
+	TO: ` + user.Username + `
+	Subject : Welcome to our site... 
+	Click <a href="#">` + jsontoken +` </a>TO Validate`)
+	err = smtp.SendMail("smtp.gmail.com:587", authh,"Our IT team",to,msg)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 
 	return c.HTML(http.StatusOK,`<h3>Successfully registed... go to <a href="/api/user/login">LOGIN PAGE</a></h3>   `)
 }
@@ -80,9 +93,7 @@ func(lg *LoginHandler)LoginHtml(c echo.Context)error{
 		},
 	})
 	fmt.Println(csrfField)
-	//data := map[string]interface{}{
-	//	csrf.TemplateTag: csrftoken,
-	//}
+
 	return tpl.ExecuteTemplate(c.Response().Writer,"login.gohtml",nil)
 }
 
@@ -110,7 +121,7 @@ func(lg *LoginHandler)Login(c echo.Context)error {
 		http.Error(c.Response().Writer, "username not found", http.StatusBadRequest)
 		return err
 	}
-	if !lg.userService.DB.CheckPassword(user.PasswordHash, jsondata.Password) {
+	if !lg.userService.DB.CheckPassword(user, jsondata.Password) {
 		http.Error(c.Response().Writer, "bad password", http.StatusBadRequest)
 		return errors.New("try again")
 	}
@@ -129,6 +140,7 @@ func(lg *LoginHandler)Logout(c echo.Context)error{
 		fmt.Println(err.Error())
 		return err
 	}
+	loggedOutUser := sess.Values["username"]
 	sess.Options = &sessions.Options{
 		Path:     "/",
 		MaxAge:   -1,
@@ -143,9 +155,9 @@ func(lg *LoginHandler)Logout(c echo.Context)error{
 
 
 	}
-	lg.logger.Println("USER LOGGED OUT: ")
+	lg.logger.Printf("USER LOGGED OUT: %v", loggedOutUser)
 
-	return c.Redirect(http.StatusFound, "/home")
+	return c.Redirect(http.StatusFound, "/api/user/login")
 }
 
 

@@ -74,7 +74,6 @@ func main() {
 
 	certificateService := &service.CertificateService{CertificateDB: store}
 	loginService := &service.UserService{DB: store}
-	certificateHandler := handler.NewCertificateHandler(certificateService, tpl,loginService)
 
 	userLoader := middleware.UserLoader{UserService:loginService}
 
@@ -90,6 +89,7 @@ func main() {
 
 
 	logger := log.New(f, "INFO: ", log.Ldate | log.Ltime | log.Lshortfile)
+	certificateHandler := handler.NewCertificateHandler(certificateService, tpl,loginService, logger)
 
 	loginHandler := handler.NewLoginHandler(domain,loginService, tpl, logger)
 
@@ -104,21 +104,12 @@ func main() {
 		panic(err)
 	}
 	fmt.Println(authkey)
-	//key := make([]byte,32)
-	//_, err = rand.Read(key)
-	//if err != nil{
-	//	panic(err)
-	//}
-	//fmt.Println("KEY : " ,string(key))
+
 	CSRF := csrf.Protect([]byte(authkey))
 
 	e.Use(echo.WrapMiddleware(CSRF))
 	e.Use(session.Middleware(sessions.NewCookieStore(rawSessionAuthKey,rawSessionEncryptionKey)))
-	//e.Use(echomiddleware.CSRFWithConfig(echomiddleware.CSRFConfig{
-	//	TokenLookup: "form:csrf",
-	//}))
-	//csrf := csrf2.Protect([]byte("32-byte-long-auth-key"))
-	//
+
 	userApi := e.Group("/api/user")
 	userApi.GET("/signup", loginHandler.SignUp)
 	userApi.POST("/register", loginHandler.Register)
@@ -127,8 +118,7 @@ func main() {
 	userApi.GET("/logout",loginHandler.Logout)
 	userApi.GET("/private", loginHandler.CheckUser, userLoader.Do)
 	userApi.GET("/readlog", loginHandler.ReadLog, userLoader.Do)
-	//e.GET("/login", loginHandler.Login)
-	//e.POST("/loging",loginHandler.Logging)
+
 	e.GET("/createnew", certificateHandler.CreateNew, userLoader.Do)
 	e.POST("/create", certificateHandler.Create, userLoader.Do)
 	e.GET("/readAll", certificateHandler.ReadAllInfo)
@@ -137,10 +127,6 @@ func main() {
 	e.POST("/revoke/:number", certificateHandler.Revoke, userLoader.Do)
 	e.POST("/download/:number", certificateHandler.Download)
 
-	//e.Use(echomiddleware.CSRFWithConfig(echomiddleware.CSRFConfig{
-	//	TokenLookup: "header:X-XSRF-TOKEN",
-	//}))
-	//e.Server.Addr = ":8080"
 	logger.Printf("TODAY IS : %v", time.Now())
 	e.Logger.Fatal(e.StartTLS(":1323","certificate/cert.pem","certificate/key.pem"))
 

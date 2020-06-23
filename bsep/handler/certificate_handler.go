@@ -13,6 +13,7 @@ import (
 	validator2 "gopkg.in/validator.v2"
 	"html/template"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -23,10 +24,12 @@ type CertificateHandler struct {
 	certificateService *service.CertificateService
 	userService *service.UserService
 	tpl *template.Template
+	logger *log.Logger
+
 }
 
-func NewCertificateHandler(cs *service.CertificateService, tpl *template.Template, userService *service.UserService) *CertificateHandler {
-	return &CertificateHandler{certificateService: cs, tpl:tpl, userService: userService}
+func NewCertificateHandler(cs *service.CertificateService, tpl *template.Template, userService *service.UserService, logger *log.Logger) *CertificateHandler {
+	return &CertificateHandler{certificateService: cs, tpl:tpl, userService: userService, logger: logger}
 }
 
 const maxUploadSize = 2 * 1024 * 1024 // 2 mb
@@ -38,7 +41,7 @@ func (ch *CertificateHandler) CreateNew(c echo.Context) error {
 	if !ok{
 		return errors.New("Error getting user from context")
 	}
-	fmt.Println(user.Username + " " + user.Roles[0].Name + " " + user.Roles[0].Permissions[0].Name)
+	ch.logger.Println("USER : " + user.Username)
 	isAuthorize := false
 	for _, role := range user.Roles{
 		for _, permi := range role.Permissions{
@@ -49,6 +52,7 @@ func (ch *CertificateHandler) CreateNew(c echo.Context) error {
 		}
 	}
 	if !isAuthorize{
+		ch.logger.Println("NOT AUTHORIZED TO DO THAT : ")
 		return echo.NewHTTPError(http.StatusForbidden,"You are not authorized to do that")
 	}
 
@@ -91,6 +95,7 @@ func (ch *CertificateHandler) Create(c echo.Context) error {
 		}
 	}
 	if !isAuthorize{
+		ch.logger.Println("NOT AUTHORIZED TO DO THAT : ")
 		return echo.NewHTTPError(http.StatusForbidden,"You are not authorized to do that")
 	}
 	validator := validator2.NewValidator()
@@ -215,6 +220,7 @@ func (ch *CertificateHandler) Revoke(c echo.Context) error {
 		}
 	}
 	if !isAuthorize{
+		ch.logger.Println("NOT AUTHORIZED TO DO THAT : ")
 		return echo.NewHTTPError(http.StatusForbidden,"You are not authorized to do that")
 	}
 	parts := strings.Split(c.Request().URL.Path, "/")
