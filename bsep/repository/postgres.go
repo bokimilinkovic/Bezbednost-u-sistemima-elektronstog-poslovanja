@@ -60,6 +60,7 @@ func (cdb *CertificateDB) AutoMigrate() error {
 			Username: "admin",
 			PasswordHash: hashedPass,
 			Salt: "admin",
+			Active: true,
 		}
 		err := cdb.db.Create(&user).Error
 		if err != nil {
@@ -140,6 +141,7 @@ func(cdb *CertificateDB)AddUser(username, password string)*model.User{
 		Username: username,
 		PasswordHash: passwordHash,
 		Salt: salt,
+		Active: false,
 	}
 	defaultRole := &model.Role{Name:"Client"}
 	defaultPermission := &model.Permission{Name:"Visit"}
@@ -147,6 +149,11 @@ func(cdb *CertificateDB)AddUser(username, password string)*model.User{
 	user.Roles = append(user.Roles,defaultRole)
 	cdb.db.Create(&user)
 	return user
+}
+
+func(cdb *CertificateDB) ActivateUser(username string)error{
+	user := &model.User{}
+	return cdb.db.Model(&user).Where("username = ?", username).Update("active", true).Error
 }
 
 func(cdb *CertificateDB)HashPassword(salt, password string) string{

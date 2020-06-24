@@ -116,6 +116,7 @@ func main() {
 	userApi.GET("/login", loginHandler.LoginHtml)
 	userApi.POST("/login", loginHandler.Login)
 	userApi.GET("/logout",loginHandler.Logout)
+	userApi.GET("/activate/:username", loginHandler.Activate)
 	userApi.GET("/private", loginHandler.CheckUser, userLoader.Do)
 	userApi.GET("/readlog", loginHandler.ReadLog, userLoader.Do)
 

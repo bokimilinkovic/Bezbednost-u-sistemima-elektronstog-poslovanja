@@ -125,6 +125,9 @@ func(lg *LoginHandler)Login(c echo.Context)error {
 		http.Error(c.Response().Writer, "bad password", http.StatusBadRequest)
 		return errors.New("try again")
 	}
+	if user.Active == false{
+		http.Error(c.Response().Writer,"User is not active, please check your email and verificate", http.StatusForbidden)
+	}
 	sess.Values["userID"] = user.ID
 	sess.Values["username"] = user.Username
 	if err := sess.Save(c.Request(), c.Response()); err != nil {
@@ -168,6 +171,15 @@ func(lg *LoginHandler)CheckUser(c echo.Context)error{
 	}
 
 	return c.String(http.StatusOK,"Welcome: " + user.Username)
+}
+
+func(lg *LoginHandler)Activate(c echo.Context)error{
+	username := c.Param("username")
+	err := lg.userService.Activate(username)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Error activating user with that username")
+	}
+	return c.String(http.StatusOK, "Successfully activted user: " + username)
 }
 
 func(lg *LoginHandler)ReadLog(c echo.Context)error{
