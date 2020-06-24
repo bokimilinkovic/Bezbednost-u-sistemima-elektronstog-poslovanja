@@ -12,17 +12,22 @@ import (
 	"github.com/gorilla/csrf"
 	"github.com/gorilla/sessions"
 	"github.com/joho/godotenv"
+	"github.com/kjk/dailyrotate"
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
 	echomiddleware "github.com/labstack/echo/v4/middleware"
 	"html/template"
 	"log"
 	"os"
+	"path/filepath"
 	"strconv"
 	"time"
 )
 
-var tpl *template.Template
+var (
+	tpl *template.Template
+	logFile *dailyrotate.File
+	)
 
 func init(){
 	tpl = template.Must(template.New("").Funcs(template.FuncMap{
@@ -78,25 +83,36 @@ func main() {
 	userLoader := middleware.UserLoader{UserService:loginService}
 
 	//Logging and monitoring
-	if !FileExists("logfile"){
-		CreateFile("logfile")
+	logDir := "logs"
+	err = os.MkdirAll(logDir,0755)
+	if err != nil {
+		log.Fatalf("os.MkdirAll()")
 	}
-	f, err := os.OpenFile("logfile", os.O_RDWR | os.O_CREATE | os.O_APPEND, 066)
-	if err != nil{
-		log.Fatal("Error openning file: %v", err)
+	pathFormat := filepath.Join(logDir, "2006-01-02.txt")
+	err = openLogFile(pathFormat, onLogClose)
+	if err != nil {
+		log.Fatalf("openLogFile failed with '%s'\n", err)
 	}
-	defer f.Close()
+	//STARI DEO
+	//if !FileExists("logfile"){
+	//	CreateFile("logfile")
+	//}
+	//f, err := os.OpenFile("logfile", os.O_RDWR | os.O_CREATE | os.O_APPEND, 066)
+	//if err != nil{
+	//	log.Fatal("Error openning file: %v", err)
+	//}
+	//defer f.Close()
+	////
 
-
-	logger := log.New(f, "INFO: ", log.Ldate | log.Ltime | log.Lshortfile)
+	logger := log.New(logFile, "INFO: ", log.Ldate | log.Ltime | log.Lshortfile)
 	certificateHandler := handler.NewCertificateHandler(certificateService, tpl,loginService, logger)
 
-	loginHandler := handler.NewLoginHandler(domain,loginService, tpl, logger)
+	loginHandler := handler.NewLoginHandler(domain,loginService, tpl, logger, logFile)
 
 	e := echo.New()
-	e.Logger.SetOutput(f)
+	e.Logger.SetOutput(logFile)
 	e.Use(echomiddleware.LoggerWithConfig(echomiddleware.LoggerConfig{
-		Output: f,
+		Output: logFile,
 	}))
 	fmt.Println("Server started")
 	authkey, err := GenerateRandomString(32)
@@ -175,4 +191,24 @@ func CreateFile(name string)error{
 		fo.Close()
 	}()
 	return nil
+}
+
+func openLogFile(pathFormat string, onClose func(string, bool)) error {
+	w, err := dailyrotate.NewFile(pathFormat, onLogClose)
+	if err != nil {
+		return err
+	}
+	logFile = w
+	return nil
+}
+
+func onLogClose(path string, didRotate bool) {
+	fmt.Printf("we just closed a file '%s', didRotate: %v\n", path, didRotate)
+	if !didRotate {
+		return
+	}
+	// process just closed file e.g. upload to backblaze storage for backup
+	go func() {
+		// if processing takes a long time, do it in background
+	}()
 }

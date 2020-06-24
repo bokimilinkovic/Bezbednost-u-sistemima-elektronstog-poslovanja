@@ -9,6 +9,7 @@ import (
 	"github.com/casbin/casbin"
 	"github.com/gorilla/csrf"
 	"github.com/gorilla/sessions"
+	"github.com/kjk/dailyrotate"
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
 	"gopkg.in/validator.v2"
@@ -24,10 +25,11 @@ type LoginHandler struct {
 	userService *service.UserService
 	tpl *template.Template
 	logger *log.Logger
+	logFile *dailyrotate.File
 }
 
-func NewLoginHandler(domain string, us *service.UserService, tpl *template.Template, logger *log.Logger) *LoginHandler {
-	return &LoginHandler{domain: domain, userService: us,tpl: tpl, logger: logger}
+func NewLoginHandler(domain string, us *service.UserService, tpl *template.Template, logger *log.Logger, daily *dailyrotate.File) *LoginHandler {
+	return &LoginHandler{domain: domain, userService: us,tpl: tpl, logger: logger, logFile:daily}
 }
 
 type UserJSON struct {
@@ -98,6 +100,7 @@ func(lg *LoginHandler)LoginHtml(c echo.Context)error{
 }
 
 func(lg *LoginHandler)Login(c echo.Context)error {
+	lg.logger.Println(c.Request())
 	sess, err := session.Get("session", c)
 	if err != nil {
 		return err
