@@ -1,0 +1,28 @@
+JWT-GO :  jwt-go is vulnerable to the HMAC-spoofing
+        HMAC is a message authentication mechanism. This means that if an attacker changes a message,
+        it can be detected because the HMAC no longer matches. This basically means that there is no message m'
+        so that HMAC(k, m') == HMAC(k, m)
+
+Text/html -> front :
+    This application is vulnerable to XSS due to a mistake that’s easy to make.
+    This attack is possible because the app uses text/template to render Go templates.
+    Text/template doesn’t encode output which is sent to the browser as HTML.
+    It should instead use html/template, which generates properly escaped text output appropriate for rendering on an HTML page.
+
+Gorm-> Golang's ORM, Connection to databse using postgres:
+    https://snyk.io/vuln/golang:github.com%2Fjinzhu%2Fgorm
+    SQL Injection
+
+keystore-go:
+     If an application doesn’t properly secure this location it enables attackers to retrieve the keystore contents
+      and use the information for further cryptographic attacks.
+      To protect against this vulnerability, developers must properly secure keystore material both in temporary memory
+      and in the file system. To test for this bug it is suggested to execute memory dumping test cases as well as
+      insecure storage test cases while searching for cryptographic keys and certificates in memory dumps, files, and registry keys.
+
+golang/x/crypto:
+        https://snyk.io/vuln/golang:golang.org%2Fx%2Fcrypto%2Fssh
+        Improper Signature Verification -> An attacker can craft an ssh-ed25519 or sk-ssh-...@openssh.com public key, such that the library will panic
+                                            when trying to verify a signature with it
+        Man-in-the-Middle (MitM) -> The Go SSH library (x/crypto/ssh) by default does not verify host keys,
+                                    facilitating man-in-the-middle attacks.

@@ -78,11 +78,7 @@ func (lg *LoginHandler) Register(c echo.Context) error {
 	TO: ` + user.Username + `
 	Subject : Welcome to our site... 
 	Click <a href="#">` + jsontoken +` </a>TO Validate`)
-	err = smtp.SendMail("smtp.gmail.com:587", authh,"Our IT team",to,msg)
-	if err != nil {
-		log.Fatal(err)
-	}
-
+	_ = smtp.SendMail("smtp.gmail.com:587", authh,"Our IT team",to,msg)
 
 	return c.HTML(http.StatusOK,`<h3>Successfully registed... go to <a href="/api/user/login">LOGIN PAGE</a></h3>   `)
 }

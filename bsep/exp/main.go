@@ -19,12 +19,12 @@ func main(){
 	permission1 := &model.Permission{Name:"Create-Certificate"}
 	permission2 := &model.Permission{Name:"Revoke-Certificate"}
 	role.Permissions = append(role.Permissions, permission1,permission2)
-	hash, err := bcrypt.GenerateFromPassword([]byte("admin"), bcrypt.DefaultCost)
+	hash, err := bcrypt.GenerateFromPassword([]byte("admin"+"admin"), bcrypt.DefaultCost)
 	if err != nil {
 		panic("Permissions: bcrypt password hasnig unsuccessful")
 	}
 	pass := string(hash)
-	user := model.User{Username:"admin",PasswordHash:pass}
+	user := model.User{Username:"admin",PasswordHash:pass, Active:true, Salt:"admin"}
 	user.Roles = append(user.Roles,role)
 	err = store.DB().Save(&user).Error
 	if err != nil{
