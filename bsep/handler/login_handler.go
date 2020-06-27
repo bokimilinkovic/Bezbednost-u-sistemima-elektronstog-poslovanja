@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"bsep/auth"
 	"bsep/model"
 	"bsep/service"
 	"errors"
@@ -8,6 +9,7 @@ import (
 	"github.com/casbin/casbin"
 	"github.com/gorilla/csrf"
 	"github.com/gorilla/sessions"
+	"github.com/kjk/dailyrotate"
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
 	"gopkg.in/validator.v2"
@@ -15,6 +17,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"net/smtp"
 )
 
 type LoginHandler struct {
@@ -22,10 +25,11 @@ type LoginHandler struct {
 	userService *service.UserService
 	tpl *template.Template
 	logger *log.Logger
+	logFile *dailyrotate.File
 }
 
-func NewLoginHandler(domain string, us *service.UserService, tpl *template.Template, logger *log.Logger) *LoginHandler {
-	return &LoginHandler{domain: domain, userService: us,tpl: tpl, logger: logger}
+func NewLoginHandler(domain string, us *service.UserService, tpl *template.Template, logger *log.Logger, daily *dailyrotate.File) *LoginHandler {
+	return &LoginHandler{domain: domain, userService: us,tpl: tpl, logger: logger, logFile:daily}
 }
 
 type UserJSON struct {
@@ -65,9 +69,16 @@ func (lg *LoginHandler) Register(c echo.Context) error {
 	user := lg.userService.DB.AddUser(jsondata.Username,jsondata.Password)
 	fmt.Println(user)
 	lg.logger.Println("NEW USER REGISTERED: ",user.Username)
-	//jsontoken := auth.GetJSONToken(user)
-	//c.Response().Header().Set("Content-Type","application/json")
-	//c.Response().Write([]byte(jsontoken))
+	jsontoken := auth.GetJSONToken(user)
+
+	//TODO: SEND EMAIL
+	authh := smtp.PlainAuth("", "konanvarvarin1997@gmail.com", "bojan1997", "smtp.gmail.com")
+	to := []string{user.Username}
+	msg := []byte(`
+	TO: ` + user.Username + `
+	Subject : Welcome to our site... 
+	Click <a href="#">` + jsontoken +` </a>TO Validate`)
+	_ = smtp.SendMail("smtp.gmail.com:587", authh,"Our IT team",to,msg)
 
 	return c.HTML(http.StatusOK,`<h3>Successfully registed... go to <a href="/api/user/login">LOGIN PAGE</a></h3>   `)
 }
@@ -80,13 +91,12 @@ func(lg *LoginHandler)LoginHtml(c echo.Context)error{
 		},
 	})
 	fmt.Println(csrfField)
-	//data := map[string]interface{}{
-	//	csrf.TemplateTag: csrftoken,
-	//}
+
 	return tpl.ExecuteTemplate(c.Response().Writer,"login.gohtml",nil)
 }
 
 func(lg *LoginHandler)Login(c echo.Context)error {
+	lg.logger.Println(c.Request())
 	sess, err := session.Get("session", c)
 	if err != nil {
 		return err
@@ -110,9 +120,12 @@ func(lg *LoginHandler)Login(c echo.Context)error {
 		http.Error(c.Response().Writer, "username not found", http.StatusBadRequest)
 		return err
 	}
-	if !lg.userService.DB.CheckPassword(user.PasswordHash, jsondata.Password) {
+	if !lg.userService.DB.CheckPassword(user, jsondata.Password) {
 		http.Error(c.Response().Writer, "bad password", http.StatusBadRequest)
 		return errors.New("try again")
+	}
+	if user.Active == false{
+		http.Error(c.Response().Writer,"User is not active, please check your email and verificate", http.StatusForbidden)
 	}
 	sess.Values["userID"] = user.ID
 	sess.Values["username"] = user.Username
@@ -129,6 +142,7 @@ func(lg *LoginHandler)Logout(c echo.Context)error{
 		fmt.Println(err.Error())
 		return err
 	}
+	loggedOutUser := sess.Values["username"]
 	sess.Options = &sessions.Options{
 		Path:     "/",
 		MaxAge:   -1,
@@ -143,9 +157,9 @@ func(lg *LoginHandler)Logout(c echo.Context)error{
 
 
 	}
-	lg.logger.Println("USER LOGGED OUT: ")
+	lg.logger.Printf("USER LOGGED OUT: %v", loggedOutUser)
 
-	return c.Redirect(http.StatusFound, "/home")
+	return c.Redirect(http.StatusFound, "/api/user/login")
 }
 
 
@@ -156,6 +170,15 @@ func(lg *LoginHandler)CheckUser(c echo.Context)error{
 	}
 
 	return c.String(http.StatusOK,"Welcome: " + user.Username)
+}
+
+func(lg *LoginHandler)Activate(c echo.Context)error{
+	username := c.Param("username")
+	err := lg.userService.Activate(username)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "Error activating user with that username")
+	}
+	return c.String(http.StatusOK, "Successfully activted user: " + username)
 }
 
 func(lg *LoginHandler)ReadLog(c echo.Context)error{

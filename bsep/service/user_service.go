@@ -13,3 +13,7 @@ func NewUserService(db *repository.CertificateDB)*UserService{
 func(us *UserService)HasUser(username string)bool{
 	return us.DB.HasUser(username)
 }
+
+func(us *UserService) Activate(username string)error{
+	return us.DB.ActivateUser(username)
+}

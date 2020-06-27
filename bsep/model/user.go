@@ -8,6 +8,8 @@ var(
 type User struct {
 	ID int `gorm:"primary_key"`
 	Username string `gorm:"not null;unique"`
+	Salt   string   `gorm:"not null"`
+	Active bool
 	PasswordHash string `gorm:"not null" json:"-"`
 	Roles []*Role `gorm:"many2many:user_roles;"`
 }

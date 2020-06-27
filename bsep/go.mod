@@ -9,6 +9,7 @@ require (
 	github.com/gorilla/sessions v1.2.0
 	github.com/jinzhu/gorm v1.9.12
 	github.com/joho/godotenv v1.3.0
+	github.com/kjk/dailyrotate v0.0.0-20191009232928-ae3b0facf5a6
 	github.com/labstack/echo-contrib v0.9.0
 	github.com/labstack/echo/v4 v4.1.16
 	github.com/pavel-v-chernykh/keystore-go v2.1.0+incompatible

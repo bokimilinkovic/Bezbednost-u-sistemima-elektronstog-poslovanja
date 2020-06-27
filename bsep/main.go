@@ -12,17 +12,22 @@ import (
 	"github.com/gorilla/csrf"
 	"github.com/gorilla/sessions"
 	"github.com/joho/godotenv"
+	"github.com/kjk/dailyrotate"
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
 	echomiddleware "github.com/labstack/echo/v4/middleware"
 	"html/template"
 	"log"
 	"os"
+	"path/filepath"
 	"strconv"
 	"time"
 )
 
-var tpl *template.Template
+var (
+	tpl *template.Template
+	logFile *dailyrotate.File
+	)
 
 func init(){
 	tpl = template.Must(template.New("").Funcs(template.FuncMap{
@@ -74,29 +79,40 @@ func main() {
 
 	certificateService := &service.CertificateService{CertificateDB: store}
 	loginService := &service.UserService{DB: store}
-	certificateHandler := handler.NewCertificateHandler(certificateService, tpl,loginService)
 
 	userLoader := middleware.UserLoader{UserService:loginService}
 
 	//Logging and monitoring
-	if !FileExists("logfile"){
-		CreateFile("logfile")
+	logDir := "logs"
+	err = os.MkdirAll(logDir,0755)
+	if err != nil {
+		log.Fatalf("os.MkdirAll()")
 	}
-	f, err := os.OpenFile("logfile", os.O_RDWR | os.O_CREATE | os.O_APPEND, 066)
-	if err != nil{
-		log.Fatal("Error openning file: %v", err)
+	pathFormat := filepath.Join(logDir, "2006-01-02.txt")
+	err = openLogFile(pathFormat, onLogClose)
+	if err != nil {
+		log.Fatalf("openLogFile failed with '%s'\n", err)
 	}
-	defer f.Close()
+	//STARI DEO
+	//if !FileExists("logfile"){
+	//	CreateFile("logfile")
+	//}
+	//f, err := os.OpenFile("logfile", os.O_RDWR | os.O_CREATE | os.O_APPEND, 066)
+	//if err != nil{
+	//	log.Fatal("Error openning file: %v", err)
+	//}
+	//defer f.Close()
+	////
 
+	logger := log.New(logFile, "INFO: ", log.Ldate | log.Ltime | log.Lshortfile)
+	certificateHandler := handler.NewCertificateHandler(certificateService, tpl,loginService, logger)
 
-	logger := log.New(f, "INFO: ", log.Ldate | log.Ltime | log.Lshortfile)
-
-	loginHandler := handler.NewLoginHandler(domain,loginService, tpl, logger)
+	loginHandler := handler.NewLoginHandler(domain,loginService, tpl, logger, logFile)
 
 	e := echo.New()
-	e.Logger.SetOutput(f)
+	e.Logger.SetOutput(logFile)
 	e.Use(echomiddleware.LoggerWithConfig(echomiddleware.LoggerConfig{
-		Output: f,
+		Output: logFile,
 	}))
 	fmt.Println("Server started")
 	authkey, err := GenerateRandomString(32)
@@ -104,31 +120,22 @@ func main() {
 		panic(err)
 	}
 	fmt.Println(authkey)
-	//key := make([]byte,32)
-	//_, err = rand.Read(key)
-	//if err != nil{
-	//	panic(err)
-	//}
-	//fmt.Println("KEY : " ,string(key))
+
 	CSRF := csrf.Protect([]byte(authkey))
 
 	e.Use(echo.WrapMiddleware(CSRF))
 	e.Use(session.Middleware(sessions.NewCookieStore(rawSessionAuthKey,rawSessionEncryptionKey)))
-	//e.Use(echomiddleware.CSRFWithConfig(echomiddleware.CSRFConfig{
-	//	TokenLookup: "form:csrf",
-	//}))
-	//csrf := csrf2.Protect([]byte("32-byte-long-auth-key"))
-	//
+
 	userApi := e.Group("/api/user")
 	userApi.GET("/signup", loginHandler.SignUp)
 	userApi.POST("/register", loginHandler.Register)
 	userApi.GET("/login", loginHandler.LoginHtml)
 	userApi.POST("/login", loginHandler.Login)
 	userApi.GET("/logout",loginHandler.Logout)
+	userApi.GET("/activate/:username", loginHandler.Activate)
 	userApi.GET("/private", loginHandler.CheckUser, userLoader.Do)
 	userApi.GET("/readlog", loginHandler.ReadLog, userLoader.Do)
-	//e.GET("/login", loginHandler.Login)
-	//e.POST("/loging",loginHandler.Logging)
+
 	e.GET("/createnew", certificateHandler.CreateNew, userLoader.Do)
 	e.POST("/create", certificateHandler.Create, userLoader.Do)
 	e.GET("/readAll", certificateHandler.ReadAllInfo)
@@ -137,10 +144,6 @@ func main() {
 	e.POST("/revoke/:number", certificateHandler.Revoke, userLoader.Do)
 	e.POST("/download/:number", certificateHandler.Download)
 
-	//e.Use(echomiddleware.CSRFWithConfig(echomiddleware.CSRFConfig{
-	//	TokenLookup: "header:X-XSRF-TOKEN",
-	//}))
-	//e.Server.Addr = ":8080"
 	logger.Printf("TODAY IS : %v", time.Now())
 	e.Logger.Fatal(e.StartTLS(":1323","certificate/cert.pem","certificate/key.pem"))
 
@@ -188,4 +191,24 @@ func CreateFile(name string)error{
 		fo.Close()
 	}()
 	return nil
+}
+
+func openLogFile(pathFormat string, onClose func(string, bool)) error {
+	w, err := dailyrotate.NewFile(pathFormat, onLogClose)
+	if err != nil {
+		return err
+	}
+	logFile = w
+	return nil
+}
+
+func onLogClose(path string, didRotate bool) {
+	fmt.Printf("we just closed a file '%s', didRotate: %v\n", path, didRotate)
+	if !didRotate {
+		return
+	}
+	// process just closed file e.g. upload to backblaze storage for backup
+	go func() {
+		// if processing takes a long time, do it in background
+	}()
 }

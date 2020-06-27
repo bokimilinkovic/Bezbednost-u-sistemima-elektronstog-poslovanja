@@ -11,3 +11,9 @@
   prevent XSS attacks
   protect files using ACL
   Logging and monitoring on every request
+
+
+Ispraviti:
+    Prilikom registracije, kreirati salt i sacuvati u bazi za svakog usera. Kada se user uloguje, na password nalepiti taj salt i proveriti hash. --uradjeno
+    Poslati verifikacioni mejl sa tokenom.
+    Za password staviti da mora da ima najmanje 10 karaktera, veliko malo slovo, spec karakter. --uradjeno 
